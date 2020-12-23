@@ -22,9 +22,9 @@ macro_rules! wedpr_println {
 
 /// Converts a string to a point if succeeded, otherwise returns false.
 #[macro_export]
-macro_rules! string_to_point {
+macro_rules! bytes_to_point {
     ($param:expr) => {
-        match string_to_point($param) {
+        match bytes_to_point($param) {
             Ok(v) => v,
             Err(_) => {
                 wedpr_println!("macro string_to_point failed");
@@ -36,26 +36,12 @@ macro_rules! string_to_point {
 
 /// Converts a string to a scalar if succeeded, otherwise returns false.
 #[macro_export]
-macro_rules! string_to_scalar {
+macro_rules! bytes_to_scalar {
     ($param:expr) => {
-        match string_to_scalar($param) {
+        match bytes_to_scalar($param) {
             Ok(v) => v,
             Err(_) => {
                 wedpr_println!("macro string_to_scalar failed");
-                return false;
-            }
-        }
-    };
-}
-
-/// Converts a string to a bytes vector if succeeded, otherwise returns false.
-#[macro_export]
-macro_rules! string_to_bytes {
-    ($param:expr) => {
-        match string_to_bytes($param) {
-            Ok(v) => v,
-            Err(_) => {
-                wedpr_println!("macro string_to_bytes failed");
                 return false;
             }
         }

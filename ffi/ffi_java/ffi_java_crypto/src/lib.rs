@@ -3,6 +3,10 @@
 //! Library of macros and functions for FFI of crypto, targeting Java-compatible
 //! architectures (including Android).
 
+// TODO: Move it to feature flags
+#![allow(unused_imports)]
+#![allow(dead_code)]
+
 #[cfg(all(feature = "wedpr_f_base64", feature = "wedpr_f_hex"))]
 compile_error!("Feature wedpr_base64 and wedpr_hex can not be enable at same time!");
 
