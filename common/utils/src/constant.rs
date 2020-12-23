@@ -1,3 +1,5 @@
+// Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
+
 /// Constants only used by tests.
 pub mod tests {
     // Test key pair for secp256k1 algorithms.
