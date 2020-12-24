@@ -24,19 +24,19 @@ extern crate rand;
 // curve25519 vrf's order is 8
 const ORDER: u8 = 8u8;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct WedprCurve25519Vrf {
-    pub gamma: [u8; 32],
-    pub c: [u8; 32],
-    pub s: [u8; 32],
+    pub gamma_param: [u8; 32],
+    pub c_param: [u8; 32],
+    pub s_param: [u8; 32],
 }
 
 impl Vrf for WedprCurve25519Vrf {
     fn encode(&self) -> Vec<u8> {
         let mut proof = Vec::new();
-        proof.append(&mut self.gamma.to_vec());
-        proof.append(&mut self.c.to_vec());
-        proof.append(&mut self.s.to_vec());
+        proof.append(&mut self.gamma_param.to_vec());
+        proof.append(&mut self.c_param.to_vec());
+        proof.append(&mut self.s_param.to_vec());
         proof
     }
 
@@ -52,16 +52,16 @@ impl Vrf for WedprCurve25519Vrf {
 
         let mut s = [0u8; 32];
         s.copy_from_slice(&proof.as_ref()[64..96]);
-        Ok(WedprCurve25519Vrf { gamma, c, s })
+        Ok(WedprCurve25519Vrf { gamma_param, c_param: c, s_param: s })
     }
 
-    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &T) -> Result<Self, WedprError> {
+    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &str) -> Result<Self, WedprError> {
         let vrf_y = Self::derive_public_key(vrf_x);
         // let y_point = bytes_to_point(&vrf_y.as_ref())?;
         let x_scalar = Scalar::hash_from_bytes::<Sha3_512>(vrf_x.as_ref());
         let mut hash_vec = Vec::new();
         hash_vec.append(&mut vrf_y.clone());
-        hash_vec.append(&mut vrf_alpha.as_ref().to_vec());
+        hash_vec.append(&mut vrf_alpha.as_bytes().to_vec());
         let h_point = RistrettoPoint::hash_from_bytes::<Sha3_512>(&hash_vec);
         let gamma = h_point * x_scalar;
         let blinding_k = Scalar::random(&mut thread_rng());
@@ -76,29 +76,29 @@ impl Vrf for WedprCurve25519Vrf {
         let c_scalar = Scalar::hash_from_bytes::<Sha3_512>(&c_vec);
         let s = blinding_k - (c_scalar * x_scalar);
         let proof = WedprCurve25519Vrf {
-            gamma: <[u8; 32]>::try_from(point_to_bytes(&gamma)).unwrap(),
-            c: <[u8; 32]>::try_from(scalar_to_bytes(&c_scalar)).unwrap(),
-            s: <[u8; 32]>::try_from(scalar_to_bytes(&s)).unwrap(),
+            gamma_param: <[u8; 32]>::try_from(point_to_bytes(&gamma)).unwrap(),
+            c_param: <[u8; 32]>::try_from(scalar_to_bytes(&c_scalar)).unwrap(),
+            s_param: <[u8; 32]>::try_from(scalar_to_bytes(&s)).unwrap(),
         };
         Ok(proof)
     }
 
-    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &T) -> bool {
-        let gamma_point = bytes_to_point!(self.gamma.as_ref());
+    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &str) -> bool {
+        let gamma_point = bytes_to_point!(self.gamma_param.as_ref());
         let y_point = bytes_to_point!(vrf_y.as_ref());
-        let c_scalar = bytes_to_scalar!(&self.c);
-        let s_scalar = bytes_to_scalar!(&self.s);
+        let c_scalar = bytes_to_scalar!(&self.c_param);
+        let s_scalar = bytes_to_scalar!(&self.s_param);
         let u = (y_point * c_scalar) + (*BASEPOINT_G1 * s_scalar);
         let mut hash_vec = Vec::new();
         hash_vec.append(&mut vrf_y.as_ref().to_vec());
-        hash_vec.append(&mut vrf_alpha.as_ref().to_vec());
+        hash_vec.append(&mut vrf_alpha.as_bytes().to_vec());
         let h_point = RistrettoPoint::hash_from_bytes::<Sha3_512>(&hash_vec);
         let v = (gamma_point * c_scalar) + (h_point * s_scalar);
 
         let mut c_vec = Vec::new();
         c_vec.append(&mut hash_vec.clone());
         c_vec.append(&mut vrf_y.as_ref().to_vec());
-        c_vec.append(&mut self.gamma.clone().to_vec());
+        c_vec.append(&mut self.gamma_param.clone().to_vec());
         c_vec.append(&mut point_to_bytes(&u));
         c_vec.append(&mut point_to_bytes(&v));
         let expect_c_scalar = Scalar::hash_from_bytes::<Sha3_512>(&c_vec);
@@ -115,8 +115,8 @@ impl Vrf for WedprCurve25519Vrf {
         point_to_bytes(&pubkey)
     }
 
-    fn proof_to_bytes(&self) -> Result<Vec<u8>, WedprError> {
-        let gamma = bytes_to_point(&self.gamma)?;
+    fn proof_to_hash(&self) -> Result<Vec<u8>, WedprError> {
+        let gamma = bytes_to_point(&self.gamma_param)?;
         let base = gamma * Scalar::from(ORDER);
         let hash = WedprKeccak256::default();
         Ok(hash.hash(&point_to_bytes(&base)))
@@ -138,12 +138,12 @@ mod tests {
         //        let x_scalar = Scalar::random(&mut thread_rng());
         let x = "random message".as_bytes().to_vec();
         let y = WedprCurve25519Vrf::derive_public_key(&x);
-        let alpha = "test msg".as_bytes().to_vec();
+        let alpha = "test msg";
         assert_eq!(WedprCurve25519Vrf::is_valid_public_key(&y), true);
         assert_eq!(WedprCurve25519Vrf::is_valid_public_key(&x), false);
 
         let proof = WedprCurve25519Vrf::prove(&x, &alpha).unwrap();
-        let hash_proof = proof.proof_to_bytes().unwrap();
+        let hash_proof = proof.proof_to_hash().unwrap();
         let result = proof.verify(&y, &alpha);
         println!("hash_proof = {:?}", hash_proof);
         println!("result = {}", result);

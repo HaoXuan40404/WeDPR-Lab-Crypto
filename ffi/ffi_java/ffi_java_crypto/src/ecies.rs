@@ -2,9 +2,15 @@
 
 #![cfg(feature = "wedpr_f_ecies_secp256k1")]
 
+#[cfg(all(feature = "wedpr_f_base64", feature = "wedpr_f_hex"))]
+compile_error!("Feature wedpr_base64 and wedpr_hex can not be enable at same time!");
+
+#[cfg(all(not(feature = "wedpr_f_base64"), not(feature = "wedpr_f_hex")))]
+compile_error!("Must use feature wedpr_base64 or wedpr_hex!");
+
 extern crate jni;
 
-use wedpr_l_utils::wedpr_trait::{Ecies};
+use wedpr_l_utils::wedpr_trait::Ecies;
 
 use crate::{config, get_result_jobject};
 
@@ -15,18 +21,6 @@ use jni::{
     objects::{JClass, JObject, JString, JValue},
     sys::jobject,
     JNIEnv,
-};
-
-#[cfg(feature = "wedpr_f_base64")]
-use wedpr_ffi_common_base64::utils::{
-    bytes_to_string, java_jstring_to_bytes,
-    java_set_error_field_and_extract_jobject,
-};
-
-#[cfg(feature = "wedpr_f_hex")]
-use wedpr_ffi_common_hex::utils::{
-    bytes_to_string, java_jstring_to_bytes,
-    java_set_error_field_and_extract_jobject,
 };
 
 #[cfg(feature = "wedpr_f_ecies_secp256k1")]

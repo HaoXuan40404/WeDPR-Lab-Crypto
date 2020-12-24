@@ -62,18 +62,18 @@ pub trait Vrf {
         Self: Sized;
 
     /// Prove a vef proof with the private key and message hash.
-    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &T) -> Result<Self, WedprError>
+    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &str) -> Result<Self, WedprError>
     where
         Self: Sized;
 
     /// Verifies a vrf proof with the parameters.
-    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &T) -> bool;
+    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &str) -> bool;
 
     /// Derive a vrf point with the a private message.
     fn derive_public_key<T: ?Sized + AsRef<[u8]>>(private_message: &T) -> Vec<u8>;
 
     /// Hash a vrf proof to Bytes.
-    fn proof_to_bytes(&self) -> Result<Vec<u8>, WedprError>;
+    fn proof_to_hash(&self) -> Result<Vec<u8>, WedprError>;
 
     /// Check a vrf public key is a valid point.
     fn is_valid_public_key<T: ?Sized + AsRef<[u8]>>(public_key: &T) -> bool;

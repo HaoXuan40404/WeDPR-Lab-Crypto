@@ -2,7 +2,7 @@
 
 #![cfg(all(feature = "wedpr_f_hash_keccak256", feature = "wedpr_f_hash_sm3"))]
 
-use wedpr_l_utils::wedpr_trait::{Hash};
+use wedpr_l_utils::wedpr_trait::Hash;
 
 #[cfg(feature = "wedpr_f_hash_keccak256")]
 use crate::config::HASH;
@@ -18,19 +18,15 @@ use jni::{
     JNIEnv,
 };
 
-
 #[cfg(feature = "wedpr_f_base64")]
 use wedpr_ffi_common_base64::utils::{
-    bytes_to_string, java_jstring_to_bytes,
-    java_set_error_field_and_extract_jobject,
+    bytes_to_string, java_jstring_to_bytes, java_set_error_field_and_extract_jobject,
 };
 
 #[cfg(feature = "wedpr_f_hex")]
 use wedpr_ffi_common_hex::utils::{
-    bytes_to_string, java_jstring_to_bytes,
-    java_set_error_field_and_extract_jobject,
+    bytes_to_string, java_jstring_to_bytes, java_set_error_field_and_extract_jobject,
 };
-
 
 #[cfg(feature = "wedpr_f_hash_keccak256")]
 #[no_mangle]

@@ -2,7 +2,7 @@
 
 #![cfg(feature = "wedpr_f_ecies_secp256k1")]
 
-use wedpr_l_utils::wedpr_trait::{Ecies};
+use wedpr_l_utils::wedpr_trait::Ecies;
 
 #[cfg(feature = "wedpr_f_ecies_secp256k1")]
 use crate::config::ECIES;

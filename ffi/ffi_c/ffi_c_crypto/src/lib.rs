@@ -22,11 +22,11 @@ extern crate wedpr_l_macros;
 #[macro_use]
 extern crate lazy_static;
 
+mod config;
 pub mod ecies;
 pub mod hash;
 pub mod signature;
-// pub mod vrf;
-mod config;
+pub mod vrf;
 
 use protobuf::{self, Message};
 

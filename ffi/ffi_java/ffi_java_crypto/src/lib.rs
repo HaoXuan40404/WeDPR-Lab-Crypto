@@ -20,24 +20,19 @@ extern crate wedpr_l_macros;
 #[macro_use]
 extern crate lazy_static;
 
+mod config;
 pub mod ecies;
 pub mod hash;
 pub mod signature;
-// pub mod vrf;
-mod config;
+pub mod vrf;
 
 #[cfg(feature = "wedpr_f_base64")]
-use wedpr_ffi_common_base64::utils::{java_new_jobject,
-};
+use wedpr_ffi_common_base64::utils::java_new_jobject;
 
 #[cfg(feature = "wedpr_f_hex")]
-use wedpr_ffi_common_hex::utils::{java_new_jobject,
-};
+use wedpr_ffi_common_hex::utils::java_new_jobject;
 
-use jni::{
-    objects::{JObject},
-    JNIEnv,
-};
+use jni::{objects::JObject, JNIEnv};
 
 // Java FFI: Java interfaces will be generated under
 // package name 'com.webank.wedpr.crypto'.
@@ -50,8 +45,3 @@ const RESULT_CRYPTO_CLASS_NAME: &str = "com/webank/wedpr/crypto/CryptoResult";
 fn get_result_jobject<'a>(_env: &'a JNIEnv) -> JObject<'a> {
     java_new_jobject(_env, RESULT_CRYPTO_CLASS_NAME)
 }
-
-
-
-
-

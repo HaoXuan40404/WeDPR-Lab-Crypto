@@ -1,8 +1,11 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-#![cfg(all(feature = "wedpr_f_signature_secp256k1", feature = "wedpr_f_signature_sm2"))]
+#![cfg(all(
+    feature = "wedpr_f_signature_secp256k1",
+    feature = "wedpr_f_signature_sm2"
+))]
 
-use wedpr_l_utils::wedpr_trait::{Signature};
+use wedpr_l_utils::wedpr_trait::Signature;
 
 #[cfg(feature = "wedpr_f_signature_secp256k1")]
 use crate::config::SIGNATURE;
@@ -20,14 +23,12 @@ use jni::{
 
 #[cfg(feature = "wedpr_f_base64")]
 use wedpr_ffi_common_base64::utils::{
-    bytes_to_string, java_jstring_to_bytes,
-    java_set_error_field_and_extract_jobject,
+    bytes_to_string, java_jstring_to_bytes, java_set_error_field_and_extract_jobject,
 };
 
 #[cfg(feature = "wedpr_f_hex")]
 use wedpr_ffi_common_hex::utils::{
-    bytes_to_string, java_jstring_to_bytes,
-    java_set_error_field_and_extract_jobject,
+    bytes_to_string, java_jstring_to_bytes, java_set_error_field_and_extract_jobject,
 };
 
 #[cfg(feature = "wedpr_f_signature_secp256k1")]
@@ -224,4 +225,3 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_NativeInterface_sm2Verify(
     java_safe_set_boolean_field!(_env, result_jobject, result, "booleanResult");
     result_jobject.into_inner()
 }
-

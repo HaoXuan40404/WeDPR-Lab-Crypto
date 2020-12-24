@@ -1,9 +1,11 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-#![cfg(all(feature = "wedpr_f_signature_secp256k1", feature = "wedpr_f_signature_sm2"))]
+#![cfg(all(
+    feature = "wedpr_f_signature_secp256k1",
+    feature = "wedpr_f_signature_sm2"
+))]
 
-use wedpr_l_utils::wedpr_trait::{Signature};
-
+use wedpr_l_utils::wedpr_trait::Signature;
 
 #[cfg(feature = "wedpr_f_signature_secp256k1")]
 use crate::config::SIGNATURE;
@@ -110,7 +112,6 @@ pub extern "C" fn wedpr_sm2_gen_key_pair() -> *mut c_char {
     });
     c_safe_return!(result)
 }
-
 
 #[cfg(feature = "wedpr_f_signature_sm2")]
 #[no_mangle]

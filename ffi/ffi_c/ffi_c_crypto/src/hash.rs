@@ -2,7 +2,7 @@
 
 #![cfg(all(feature = "wedpr_f_hash_keccak256", feature = "wedpr_f_hash_sm3"))]
 
-use wedpr_l_utils::wedpr_trait::{Hash};
+use wedpr_l_utils::wedpr_trait::Hash;
 
 #[cfg(feature = "wedpr_f_hash_keccak256")]
 use crate::config::HASH;
@@ -25,7 +25,6 @@ use wedpr_ffi_common_base64::utils::{
 use wedpr_ffi_common_hex::utils::{
     bytes_to_string, c_char_pointer_to_string, string_to_bytes, FAILURE, SUCCESS,
 };
-
 
 #[cfg(feature = "wedpr_f_hash_keccak256")]
 #[no_mangle]
