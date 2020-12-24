@@ -51,30 +51,30 @@ pub trait Signature {
     fn generate_keypair(&self) -> (Vec<u8>, Vec<u8>);
 }
 
-// /// Trait of a replaceable VRF algorithm.
-// pub trait Vrf {
-//     /// Encode object
-//     fn encode(&self) -> Vec<u8>;
-//
-//     /// Encode object
-//     fn decode(proof: &[u8]) -> Result<Self, WedprError>;
-//
-//     /// Prove a vef proof with the private key and message hash.
-//     fn prove<T: ?Sized + AsRef<[u8]>>(
-//         vrf_x: &T,
-//         vrf_alpha: &T,
-//     ) -> Result<Self, WedprError>;
-//
-//     /// Verifies a vrf proof with the parameters.
-//     fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &T) -> bool;
-//
-//     /// Derive a vrf point with the a private message.
-//     fn derive_public_key<T: ?Sized + AsRef<[u8]>>(private_message: &T) -> Vec<u8>;
-//
-//     /// Hash a vrf proof to Bytes.
-//     fn proof_to_bytes(&self) -> Vec<u8>;
-//
-//     /// Check a vrf public key is a valid point.
-//     fn is_valid_public_key<T: ?Sized + AsRef<[u8]>>(public_key: &T) -> bool;
-//
-// }
+/// Trait of a replaceable VRF algorithm.
+pub trait Vrf {
+    /// Encode object
+    fn encode(&self) -> Vec<u8>;
+
+    /// Encode object
+    fn decode<T: ?Sized + AsRef<[u8]>>(proof: &T) -> Result<Self, WedprError>
+    where
+        Self: Sized;
+
+    /// Prove a vef proof with the private key and message hash.
+    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &T) -> Result<Self, WedprError>
+    where
+        Self: Sized;
+
+    /// Verifies a vrf proof with the parameters.
+    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &T) -> bool;
+
+    /// Derive a vrf point with the a private message.
+    fn derive_public_key<T: ?Sized + AsRef<[u8]>>(private_message: &T) -> Vec<u8>;
+
+    /// Hash a vrf proof to Bytes.
+    fn proof_to_bytes(&self) -> Result<Vec<u8>, WedprError>;
+
+    /// Check a vrf public key is a valid point.
+    fn is_valid_public_key<T: ?Sized + AsRef<[u8]>>(public_key: &T) -> bool;
+}

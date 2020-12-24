@@ -1,6 +1,7 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
 //! SM2 signature functions.
+#[allow(unused_imports)]
 #[macro_use]
 extern crate wedpr_l_macros;
 #[macro_use]
@@ -66,7 +67,7 @@ impl Signature for WeDPRSm2p256v1 {
 }
 
 impl WeDPRSm2p256v1 {
-    fn sign_with_pub(
+    pub fn sign_with_pub(
         &self,
         private_key: &[u8],
         public_key: &[u8],

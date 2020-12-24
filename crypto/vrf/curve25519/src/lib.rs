@@ -4,8 +4,8 @@
 
 extern crate curve25519_dalek;
 use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::{ristretto, scalar::Scalar};
-use wedpr_l_utils::wedpr_trait::Hash;
+use curve25519_dalek::scalar::Scalar;
+use wedpr_l_utils::wedpr_trait::{Hash, Vrf};
 
 #[macro_use]
 extern crate wedpr_l_macros;
@@ -31,7 +31,7 @@ pub struct WedprCurve25519Vrf {
     pub s: [u8; 32],
 }
 
-impl WedprCurve25519Vrf {
+impl Vrf for WedprCurve25519Vrf {
     fn encode(&self) -> Vec<u8> {
         let mut proof = Vec::new();
         proof.append(&mut self.gamma.to_vec());
@@ -40,22 +40,22 @@ impl WedprCurve25519Vrf {
         proof
     }
 
-    fn decode(proof: &[u8]) -> Result<Self, WedprError> {
-        if proof.len() != 96 {
+    fn decode<T: ?Sized + AsRef<[u8]>>(proof: &T) -> Result<Self, WedprError> {
+        if proof.as_ref().len() != 96 {
             return Err(WedprError::FormatError);
         }
         let mut gamma = [0u8; 32];
-        gamma.copy_from_slice(&proof[0..32]);
+        gamma.copy_from_slice(&proof.as_ref()[0..32]);
 
         let mut c = [0u8; 32];
-        c.copy_from_slice(&proof[32..64]);
+        c.copy_from_slice(&proof.as_ref()[32..64]);
 
         let mut s = [0u8; 32];
-        s.copy_from_slice(&proof[64..96]);
+        s.copy_from_slice(&proof.as_ref()[64..96]);
         Ok(WedprCurve25519Vrf { gamma, c, s })
     }
 
-    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &[u8]) -> Result<Self, WedprError> {
+    fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &T) -> Result<Self, WedprError> {
         let vrf_y = Self::derive_public_key(vrf_x);
         // let y_point = bytes_to_point(&vrf_y.as_ref())?;
         let x_scalar = Scalar::hash_from_bytes::<Sha3_512>(vrf_x.as_ref());
@@ -83,7 +83,7 @@ impl WedprCurve25519Vrf {
         Ok(proof)
     }
 
-    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &[u8]) -> bool {
+    fn verify<T: ?Sized + AsRef<[u8]>>(&self, vrf_y: &T, vrf_alpha: &T) -> bool {
         let gamma_point = bytes_to_point!(self.gamma.as_ref());
         let y_point = bytes_to_point!(vrf_y.as_ref());
         let c_scalar = bytes_to_scalar!(&self.c);
@@ -136,27 +136,27 @@ mod tests {
     #[test]
     fn test_vrf() {
         //        let x_scalar = Scalar::random(&mut thread_rng());
-        let x = "random message";
-        let y = WedprCurve25519Vrf::derive_public_key(x);
-        let alpha = "test msg".as_bytes();
+        let x = "random message".as_bytes().to_vec();
+        let y = WedprCurve25519Vrf::derive_public_key(&x);
+        let alpha = "test msg".as_bytes().to_vec();
         assert_eq!(WedprCurve25519Vrf::is_valid_public_key(&y), true);
-        assert_eq!(WedprCurve25519Vrf::is_valid_public_key(x), false);
+        assert_eq!(WedprCurve25519Vrf::is_valid_public_key(&x), false);
 
-        let proof = WedprCurve25519Vrf::prove(x, alpha).unwrap();
+        let proof = WedprCurve25519Vrf::prove(&x, &alpha).unwrap();
         let hash_proof = proof.proof_to_bytes().unwrap();
-        let result = proof.verify(&y, alpha);
+        let result = proof.verify(&y, &alpha);
         println!("hash_proof = {:?}", hash_proof);
         println!("result = {}", result);
 
         assert_eq!(result, true);
-        let proof_err = WedprCurve25519Vrf::prove("error x", alpha).unwrap();
-        let result_err = proof_err.verify(&y, alpha);
+        let proof_err = WedprCurve25519Vrf::prove(&"error x".as_bytes().to_vec(), &alpha).unwrap();
+        let result_err = proof_err.verify(&y, &alpha);
         assert_eq!(result_err, false);
 
         let encode = proof.encode();
         println!("encode = {:?}", encode);
         let decode = WedprCurve25519Vrf::decode(&encode).unwrap();
-        let result = decode.verify(&y, alpha);
+        let result = decode.verify(&y, &alpha);
         println!("result = {}", result);
     }
 }

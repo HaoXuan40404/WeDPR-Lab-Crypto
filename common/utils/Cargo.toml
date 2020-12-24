@@ -10,3 +10,4 @@ description = "Library of WeDPR shared macros."
 
 [dependencies]
 failure = "0.1"
+

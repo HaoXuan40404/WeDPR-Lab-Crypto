@@ -11,7 +11,7 @@ pub struct WedprSm3 {}
 /// Implements FISCO-BCOS-compatible sm3 as a Hash instance.
 impl Hash for WedprSm3 {
     fn hash<T: ?Sized + AsRef<[u8]>>(&self, input: &T) -> Vec<u8> {
-        let mut hash_algorithm = Sm3Hash::new(input);
+        let mut hash_algorithm = Sm3Hash::new(input.as_ref());
         hash_algorithm.get_hash().to_vec()
     }
 }
