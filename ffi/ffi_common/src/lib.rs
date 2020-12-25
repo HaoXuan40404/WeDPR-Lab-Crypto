@@ -2,7 +2,7 @@
 
 //! Library of utilities for FFI (adapting Rust to other programming languages).
 
-#[cfg_attr(tarpaulin, skip)]
+#[cfg(not(tarpaulin_include))]
 pub mod utils;
 
 #[allow(unused_imports)]

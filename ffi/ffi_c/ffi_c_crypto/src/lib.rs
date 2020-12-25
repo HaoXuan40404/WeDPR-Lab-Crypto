@@ -4,11 +4,10 @@
 //! compatible architectures (including iOS).
 
 // TODO: Move it to feature flags
-#![allow(unused_imports)]
-#![allow(dead_code)]
-
+#![cfg(not(tarpaulin_include))]
 #[cfg(all(feature = "wedpr_f_base64", feature = "wedpr_f_hex"))]
 compile_error!("Feature wedpr_base64 and wedpr_hex can not be enable at same time!");
+
 
 #[cfg(all(not(feature = "wedpr_f_base64"), not(feature = "wedpr_f_hex")))]
 compile_error!("Must use feature wedpr_base64 or wedpr_hex!");

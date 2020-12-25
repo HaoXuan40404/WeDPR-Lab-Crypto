@@ -2,4 +2,5 @@
 
 //! Library of protobuf definitions and their generated code.
 
+#[cfg(not(tarpaulin_include))]
 pub mod generated;

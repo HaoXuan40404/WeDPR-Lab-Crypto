@@ -9,7 +9,7 @@ use std::env;
 /// Uses `cargo run` in this sub crate (wedpr_l_protos) to compile proto files to
 /// rust files. You need to update the generated files every time you modify the
 /// existing proto files or add new proto files.
-#[cfg_attr(tarpaulin, skip)]
+#[cfg(not(tarpaulin_include))]
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
@@ -20,7 +20,7 @@ fn main() {
 }
 
 /// Compiles proto files to rust files.
-#[cfg_attr(tarpaulin, skip)]
+#[cfg(not(tarpaulin_include))]
 fn generate_proto_for_all() {
     Codegen::new()
         .out_dir("./src/generated/")
