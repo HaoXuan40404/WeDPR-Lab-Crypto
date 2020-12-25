@@ -1,4 +1,14 @@
-# how to cross compile with openssl
+# ffi_java_crypto
+
+## build with feature
+
+``bash
+cargo build --release
+# or choose features
+cargo build --features "wedpr_f_hex wedpr_f_signature_secp256k1" --no-default-features
+``
+
+## ffi android
 
 for android, my ndk version is 23
 

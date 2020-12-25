@@ -12,7 +12,8 @@ use jni::{
 
 #[cfg(feature = "wedpr_f_base64")]
 use wedpr_ffi_common_base64::utils::{
-    bytes_to_string, java_jstring_to_bytes, java_set_error_field_and_extract_jobject,
+    bytes_to_string, java_jstring_to_bytes, java_jstring_to_string,
+    java_set_error_field_and_extract_jobject,
 };
 
 #[cfg(feature = "wedpr_f_hex")]

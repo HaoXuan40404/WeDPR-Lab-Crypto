@@ -52,7 +52,11 @@ impl Vrf for WedprCurve25519Vrf {
 
         let mut s = [0u8; 32];
         s.copy_from_slice(&proof.as_ref()[64..96]);
-        Ok(WedprCurve25519Vrf { gamma_param, c_param: c, s_param: s })
+        Ok(WedprCurve25519Vrf {
+            gamma_param: gamma,
+            c_param: c,
+            s_param: s,
+        })
     }
 
     fn prove<T: ?Sized + AsRef<[u8]>>(vrf_x: &T, vrf_alpha: &str) -> Result<Self, WedprError> {
