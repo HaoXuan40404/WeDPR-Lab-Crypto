@@ -52,6 +52,11 @@ pub fn scalar_to_bytes(input: &Scalar) -> Vec<u8> {
     input.as_bytes().to_vec()
 }
 
+/// Converts Scalar to a slice.
+pub fn scalar_to_slice(input: &Scalar) -> [u8;32] {
+    input.as_bytes().clone()
+}
+
 /// Extracts a slice of &[u8; 32] from the given slice.
 fn to_bytes32_slice(barry: &[u8]) -> Result<&[u8; 32], WedprError> {
     let pop_u8 = match barry.try_into() {
@@ -73,6 +78,11 @@ pub fn bytes_to_scalar(input: &[u8]) -> Result<Scalar, WedprError> {
 /// Converts RistrettoPoint to a vector.
 pub fn point_to_bytes(point: &RistrettoPoint) -> Vec<u8> {
     point.compress().to_bytes().to_vec()
+}
+
+/// Converts RistrettoPoint to a vector.
+pub fn point_to_slice(point: &RistrettoPoint) -> [u8; 32] {
+    point.compress().to_bytes()
 }
 
 /// Converts a vector to RistrettoPoint.

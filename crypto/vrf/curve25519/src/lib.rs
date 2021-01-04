@@ -12,11 +12,8 @@ extern crate wedpr_l_macros;
 
 use rand::thread_rng;
 use sha3::Sha3_512;
-use std::convert::TryFrom;
 use wedpr_l_crypto_hash_keccak256::WedprKeccak256;
-use wedpr_l_crypto_zkp_utils::{
-    bytes_to_point, bytes_to_scalar, point_to_bytes, scalar_to_bytes, BASEPOINT_G1,
-};
+use wedpr_l_crypto_zkp_utils::{bytes_to_point, bytes_to_scalar, point_to_bytes, scalar_to_bytes, BASEPOINT_G1, point_to_slice, scalar_to_slice};
 use wedpr_l_utils::error::WedprError;
 
 extern crate rand;
@@ -80,9 +77,9 @@ impl Vrf for WedprCurve25519Vrf {
         let c_scalar = Scalar::hash_from_bytes::<Sha3_512>(&c_vec);
         let s = blinding_k - (c_scalar * x_scalar);
         let proof = WedprCurve25519Vrf {
-            gamma_param: <[u8; 32]>::try_from(point_to_bytes(&gamma)).unwrap(),
-            c_param: <[u8; 32]>::try_from(scalar_to_bytes(&c_scalar)).unwrap(),
-            s_param: <[u8; 32]>::try_from(scalar_to_bytes(&s)).unwrap(),
+            gamma_param:  point_to_slice(&gamma),
+            c_param: scalar_to_slice(&c_scalar),
+            s_param: scalar_to_slice(&s),
         };
         Ok(proof)
     }
