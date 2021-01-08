@@ -1,6 +1,6 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-//! Shared config.
+//! Shared config for ZKP.
 
 use wedpr_l_crypto_hash_keccak256::WedprKeccak256;
 

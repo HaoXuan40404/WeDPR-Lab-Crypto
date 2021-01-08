@@ -11,4 +11,3 @@ description = "Library of WeDPR protobuf definitions and their generated code."
 [dependencies]
 protobuf = "2.18.1"
 protoc-rust = "2.18.1"
-

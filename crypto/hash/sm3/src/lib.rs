@@ -3,12 +3,12 @@
 //! SM3 hash functions.
 
 use wedpr_l_libsm::sm3::hash::Sm3Hash;
-use wedpr_l_utils::wedpr_trait::Hash;
+use wedpr_l_utils::traits::Hash;
 
+/// Implements SM3 as a Hash instance.
 #[derive(Default, Debug, Clone)]
 pub struct WedprSm3 {}
 
-/// Implements FISCO-BCOS-compatible sm3 as a Hash instance.
 impl Hash for WedprSm3 {
     fn hash<T: ?Sized + AsRef<[u8]>>(&self, input: &T) -> Vec<u8> {
         let mut hash_algorithm = Sm3Hash::new(input.as_ref());

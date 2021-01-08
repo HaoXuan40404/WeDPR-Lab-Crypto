@@ -21,7 +21,7 @@ macro_rules! java_safe_jstring_to_bytes {
                         stringify!($java_string)
                     ),
                 )
-            }
+            },
         }
     };
 }
@@ -36,9 +36,12 @@ macro_rules! java_safe_jbytes_to_bytes {
                 return java_set_error_field_and_extract_jobject(
                     &$_env,
                     &$result_jobject,
-                    &format!("jbytes to bytes failed, input={}", stringify!($java_bytes)),
+                    &format!(
+                        "jbytes to bytes failed, input={}",
+                        stringify!($java_bytes)
+                    ),
                 )
-            }
+            },
         }
     };
 }
@@ -58,7 +61,28 @@ macro_rules! java_safe_jstring_to_string {
                         stringify!($java_string)
                     ),
                 )
-            }
+            },
+        }
+    };
+}
+
+/// Converts Java String to Rust bytes without decoding, and returns an error
+/// object if failed.
+#[macro_export]
+macro_rules! java_safe_jstring_to_bytes_utf8 {
+    ($_env:expr, $result_jobject:expr, $java_string:expr) => {
+        match java_jstring_to_string(&$_env, $java_string) {
+            Ok(v) => string_to_bytes_utf8(&v),
+            Err(_) => {
+                return java_set_error_field_and_extract_jobject(
+                    &$_env,
+                    &$result_jobject,
+                    &format!(
+                        "jstring to string failed, input={}",
+                        stringify!($java_string)
+                    ),
+                )
+            },
         }
     };
 }
@@ -78,7 +102,7 @@ macro_rules! java_safe_string_to_jstring {
                         stringify!($rust_string)
                     ),
                 )
-            }
+            },
         })
     };
 }
@@ -113,7 +137,7 @@ macro_rules! java_safe_bytes_to_pb {
                         stringify!($pb_type),
                     ),
                 )
-            }
+            },
         }
     };
 }
@@ -128,9 +152,12 @@ macro_rules! java_safe_pb_to_bytes {
                 return java_set_error_field_and_extract_jobject(
                     &$_env,
                     &$result_jobject,
-                    &format!("protobuf to bytes failed, input={}", stringify!($rust_pb)),
+                    &format!(
+                        "protobuf to bytes failed, input={}",
+                        stringify!($rust_pb)
+                    ),
                 )
-            }
+            },
         }
     };
 }
@@ -164,7 +191,7 @@ macro_rules! java_safe_set_field {
                         stringify!($field_type)
                     ),
                 )
-            }
+            },
         }
     };
 }
@@ -173,7 +200,13 @@ macro_rules! java_safe_set_field {
 #[macro_export]
 macro_rules! java_safe_set_long_field {
     ($_env:expr, $result_jobject:expr, $rust_value:expr, $field_name:expr) => {
-        java_safe_set_field!($_env, $result_jobject, $rust_value, $field_name, "J")
+        java_safe_set_field!(
+            $_env,
+            $result_jobject,
+            $rust_value,
+            $field_name,
+            "J"
+        )
     };
 }
 
@@ -181,7 +214,13 @@ macro_rules! java_safe_set_long_field {
 #[macro_export]
 macro_rules! java_safe_set_boolean_field {
     ($_env:expr, $result_jobject:expr, $rust_value:expr, $field_name:expr) => {
-        java_safe_set_field!($_env, $result_jobject, $rust_value, $field_name, "Z")
+        java_safe_set_field!(
+            $_env,
+            $result_jobject,
+            $rust_value,
+            $field_name,
+            "Z"
+        )
     };
 }
 
@@ -189,7 +228,13 @@ macro_rules! java_safe_set_boolean_field {
 #[macro_export]
 macro_rules! java_safe_set_int_field {
     ($_env:expr, $result_jobject:expr, $rust_value:expr, $field_name:expr) => {
-        java_safe_set_field!($_env, $result_jobject, $rust_value, $field_name, "I")
+        java_safe_set_field!(
+            $_env,
+            $result_jobject,
+            $rust_value,
+            $field_name,
+            "I"
+        )
     };
 }
 
@@ -197,7 +242,13 @@ macro_rules! java_safe_set_int_field {
 #[macro_export]
 macro_rules! java_safe_set_byte_field {
     ($_env:expr, $result_jobject:expr, $rust_value:expr, $field_name:expr) => {
-        java_safe_set_field!($_env, $result_jobject, $rust_value, $field_name, "B")
+        java_safe_set_field!(
+            $_env,
+            $result_jobject,
+            $rust_value,
+            $field_name,
+            "B"
+        )
     };
 }
 
@@ -244,6 +295,36 @@ macro_rules! java_safe_set_encoded_pb_field {
 
 // C/C++ FFI macros.
 
+/// Converts C char pointer to Rust bytes without decoding, and returns a
+/// specified error value if failed.
+#[macro_export]
+macro_rules! c_safe_c_char_pointer_to_bytes_utf8_with_error_value {
+    ($c_char_pointer:expr, $error_value:expr) => {
+        match c_char_pointer_to_string($c_char_pointer) {
+            Ok(v) => string_to_bytes_utf8(&v),
+            Err(_) => {
+                wedpr_println!(
+                    "C char pointer to string failed, pointer_name={}",
+                    stringify!($c_char_pointer)
+                );
+                return $error_value;
+            },
+        }
+    };
+}
+
+/// Converts C char pointer to Rust bytes without decoding, and returns NULL if
+/// failed.
+#[macro_export]
+macro_rules! c_safe_c_char_pointer_to_bytes_utf8 {
+    ($c_char_pointer:expr) => {
+        c_safe_c_char_pointer_to_bytes_utf8_with_error_value!(
+            $c_char_pointer,
+            ptr::null_mut()
+        )
+    };
+}
+
 /// Converts C char pointer to Rust string, and returns a specified error value
 /// if failed.
 #[macro_export]
@@ -257,7 +338,7 @@ macro_rules! c_safe_c_char_pointer_to_string_with_error_value {
                     stringify!($c_char_pointer)
                 );
                 return $error_value;
-            }
+            },
         }
     };
 }
@@ -266,7 +347,10 @@ macro_rules! c_safe_c_char_pointer_to_string_with_error_value {
 #[macro_export]
 macro_rules! c_safe_c_char_pointer_to_string {
     ($c_char_pointer:expr) => {
-        c_safe_c_char_pointer_to_string_with_error_value!($c_char_pointer, ptr::null_mut())
+        c_safe_c_char_pointer_to_string_with_error_value!(
+            $c_char_pointer,
+            ptr::null_mut()
+        )
     };
 }
 
@@ -275,10 +359,12 @@ macro_rules! c_safe_c_char_pointer_to_string {
 #[macro_export]
 macro_rules! c_safe_c_char_pointer_to_bytes_with_error_value {
     ($c_char_pointer:expr, $error_value:expr) => {
-        match string_to_bytes(&c_safe_c_char_pointer_to_string_with_error_value!(
-            $c_char_pointer,
-            $error_value
-        )) {
+        match string_to_bytes(
+            &c_safe_c_char_pointer_to_string_with_error_value!(
+                $c_char_pointer,
+                $error_value
+            ),
+        ) {
             Ok(v) => v,
             Err(_) => return $error_value,
         }
@@ -289,7 +375,10 @@ macro_rules! c_safe_c_char_pointer_to_bytes_with_error_value {
 #[macro_export]
 macro_rules! c_safe_c_char_pointer_to_bytes {
     ($c_char_pointer:expr) => {
-        c_safe_c_char_pointer_to_bytes_with_error_value!($c_char_pointer, ptr::null_mut())
+        c_safe_c_char_pointer_to_bytes_with_error_value!(
+            $c_char_pointer,
+            ptr::null_mut()
+        )
     };
 }
 
@@ -299,7 +388,10 @@ macro_rules! c_safe_c_char_pointer_to_bytes {
 macro_rules! c_safe_c_char_pointer_to_proto_with_error_value {
     ($c_char_pointer:expr, $pb_type:ty, $error_value:expr) => {
         match protobuf::parse_from_bytes::<$pb_type>(
-            &c_safe_c_char_pointer_to_bytes_with_error_value!($c_char_pointer, $error_value),
+            &c_safe_c_char_pointer_to_bytes_with_error_value!(
+                $c_char_pointer,
+                $error_value
+            ),
         ) {
             Ok(v) => v,
             Err(_) => return $error_value,
@@ -311,7 +403,11 @@ macro_rules! c_safe_c_char_pointer_to_proto_with_error_value {
 #[macro_export]
 macro_rules! c_safe_c_char_pointer_to_proto {
     ($c_char_pointer:expr, $pb_type:ty) => {
-        c_safe_c_char_pointer_to_proto_with_error_value!($c_char_pointer, $pb_type, ptr::null_mut())
+        c_safe_c_char_pointer_to_proto_with_error_value!(
+            $c_char_pointer,
+            $pb_type,
+            ptr::null_mut()
+        )
     };
 }
 
@@ -331,7 +427,10 @@ macro_rules! c_safe_string_to_c_char_pointer_with_error_value {
 #[macro_export]
 macro_rules! c_safe_string_to_c_char_pointer {
     ($rust_string:expr) => {
-        c_safe_string_to_c_char_pointer_with_error_value!($rust_string, ptr::null_mut())
+        c_safe_string_to_c_char_pointer_with_error_value!(
+            $rust_string,
+            ptr::null_mut()
+        )
     };
 }
 

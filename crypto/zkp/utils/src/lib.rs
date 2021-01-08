@@ -1,13 +1,16 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-//! Common utility functions.
+//! Common utility functions for ZKP.
 
-use curve25519_dalek::constants::{RISTRETTO_BASEPOINT_COMPRESSED, RISTRETTO_BASEPOINT_POINT};
+use curve25519_dalek::constants::{
+    RISTRETTO_BASEPOINT_COMPRESSED, RISTRETTO_BASEPOINT_POINT,
+};
 
 use curve25519_dalek::{
     ristretto::{CompressedRistretto, RistrettoPoint},
     scalar::Scalar,
 };
+
 #[macro_use]
 extern crate wedpr_l_macros;
 #[macro_use]
@@ -17,11 +20,10 @@ mod config;
 use config::HASH;
 use sha3::Sha3_512;
 use std::convert::TryInto;
-use wedpr_l_utils::error::WedprError;
-use wedpr_l_utils::wedpr_trait::Hash;
+use wedpr_l_utils::{error::WedprError, traits::Hash};
 
 lazy_static! {
-/// A base point used by various crypto algorithms.
+    /// A base point used by various crypto algorithms.
     pub static ref BASEPOINT_G1: RistrettoPoint = RISTRETTO_BASEPOINT_POINT;
     /// Another base point used by various crypto algorithms.
     pub static ref BASEPOINT_G2: RistrettoPoint =
@@ -53,7 +55,7 @@ pub fn scalar_to_bytes(input: &Scalar) -> Vec<u8> {
 }
 
 /// Converts Scalar to a slice.
-pub fn scalar_to_slice(input: &Scalar) -> [u8;32] {
+pub fn scalar_to_slice(input: &Scalar) -> [u8; 32] {
     input.as_bytes().clone()
 }
 
@@ -75,12 +77,12 @@ pub fn bytes_to_scalar(input: &[u8]) -> Result<Scalar, WedprError> {
     Ok(scalar_num)
 }
 
-/// Converts RistrettoPoint to a vector.
+/// Converts RistrettoPoint to a bytes vector.
 pub fn point_to_bytes(point: &RistrettoPoint) -> Vec<u8> {
     point.compress().to_bytes().to_vec()
 }
 
-/// Converts RistrettoPoint to a vector.
+/// Converts RistrettoPoint to a bytes slice.
 pub fn point_to_slice(point: &RistrettoPoint) -> [u8; 32] {
     point.compress().to_bytes()
 }
@@ -91,13 +93,15 @@ pub fn bytes_to_point(point: &[u8]) -> Result<RistrettoPoint, WedprError> {
         wedpr_println!("string_to_point decode failed");
         return Err(WedprError::FormatError);
     }
-    let point_value = match CompressedRistretto::from_slice(&point).decompress() {
+    let point_value = match CompressedRistretto::from_slice(&point).decompress()
+    {
         Some(v) => v,
         None => {
-            wedpr_println!("string_to_point decompress CompressedRistretto failed");
+            wedpr_println!(
+                "string_to_point decompress CompressedRistretto failed"
+            );
             return Err(WedprError::FormatError);
-        }
+        },
     };
-
     Ok(point_value)
 }

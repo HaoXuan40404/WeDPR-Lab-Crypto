@@ -1,17 +1,16 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-//! Basic encoding and decoding functions.
+//! BaseX encoding and decoding functions.
 
 #[macro_use]
 extern crate wedpr_l_macros;
 
-use wedpr_l_utils::error::WedprError;
-use wedpr_l_utils::wedpr_trait::Coder;
+use wedpr_l_utils::{error::WedprError, traits::Coder};
 
+/// Implements Base64 as a Coder instance.
 #[derive(Default, Debug, Clone)]
 pub struct WedprBase64 {}
 
-/// Implements Base64 as a Coder instance.
 impl Coder for WedprBase64 {
     fn encode<T: ?Sized + AsRef<[u8]>>(&self, input: &T) -> String {
         base64::encode(input)
@@ -23,7 +22,7 @@ impl Coder for WedprBase64 {
             Err(_) => {
                 wedpr_println!("Base64 decoding failed, input was: {}", input);
                 return Err(WedprError::DecodeError);
-            }
+            },
         };
     }
 }

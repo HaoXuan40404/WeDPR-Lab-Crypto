@@ -7,4 +7,5 @@ extern crate failure;
 
 pub mod constant;
 pub mod error;
-pub mod wedpr_trait;
+pub mod tool;
+pub mod traits;

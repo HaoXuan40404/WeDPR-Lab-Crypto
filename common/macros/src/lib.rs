@@ -29,7 +29,7 @@ macro_rules! bytes_to_point {
             Err(_) => {
                 wedpr_println!("macro string_to_point failed");
                 return false;
-            }
+            },
         }
     };
 }
@@ -43,7 +43,7 @@ macro_rules! bytes_to_scalar {
             Err(_) => {
                 wedpr_println!("macro string_to_scalar failed");
                 return false;
-            }
+            },
         }
     };
 }

@@ -1,27 +1,29 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-use wedpr_l_utils::error::WedprError;
-use wedpr_l_utils::wedpr_trait::Ecies;
+//! Secp256k1 ECIES functions.
+
+use wedpr_l_utils::{error::WedprError, traits::Ecies};
 
 #[macro_use]
 extern crate wedpr_l_macros;
 
+/// Implements a ECIES instance on Secp256k1 curve.
 #[derive(Default, Debug, Clone)]
 pub struct WedprSecp256k1Ecies {}
 
-/// Implements a ECIES instance on Secp256k1 curve.
 impl Ecies for WedprSecp256k1Ecies {
     fn encrypt<T: ?Sized + AsRef<[u8]>>(
         &self,
         public_key: &T,
         message: &T,
-    ) -> Result<Vec<u8>, WedprError> {
+    ) -> Result<Vec<u8>, WedprError>
+    {
         match ecies::encrypt(public_key.as_ref(), message.as_ref()) {
             Ok(v) => Ok(v.to_vec()),
             Err(_) => {
                 wedpr_println!("secp256k1 ECIES encrypt failed");
                 return Err(WedprError::FormatError);
-            }
+            },
         }
     }
 
@@ -29,13 +31,14 @@ impl Ecies for WedprSecp256k1Ecies {
         &self,
         private_key: &T,
         ciphertext: &T,
-    ) -> Result<Vec<u8>, WedprError> {
+    ) -> Result<Vec<u8>, WedprError>
+    {
         match ecies::decrypt(private_key.as_ref(), ciphertext.as_ref()) {
             Ok(v) => Ok(v.to_vec()),
             Err(_) => {
                 wedpr_println!("secp256k1 ECIES decrypt failed");
                 return Err(WedprError::FormatError);
-            }
+            },
         }
     }
 }
@@ -44,7 +47,8 @@ impl Ecies for WedprSecp256k1Ecies {
 mod tests {
     use super::*;
     use wedpr_l_utils::constant::tests::{
-        BASE64_ENCODED_TEST_MESSAGE, SECP256K1_TEST_PUBLIC_KEY, SECP256K1_TEST_SECRET_KEY,
+        BASE64_ENCODED_TEST_MESSAGE, SECP256K1_TEST_PUBLIC_KEY,
+        SECP256K1_TEST_SECRET_KEY,
     };
 
     #[test]

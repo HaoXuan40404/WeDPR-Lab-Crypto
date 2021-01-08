@@ -1,11 +1,13 @@
 // Copyright 2020 WeDPR Lab Project Authors. Licensed under Apache-2.0.
 
-//! Zero-knowledge proof (ZKP) functions.
+//! Zero-knowledge proof (ZKP) functions based on DLP construction.
 
-use curve25519_dalek::traits::MultiscalarMul;
-use curve25519_dalek::{ristretto::RistrettoPoint, scalar::Scalar};
+use curve25519_dalek::{
+    ristretto::RistrettoPoint, scalar::Scalar, traits::MultiscalarMul,
+};
 use wedpr_l_crypto_zkp_utils::{
-    bytes_to_scalar, get_random_scalar, hash_to_scalar, point_to_bytes, scalar_to_bytes,
+    bytes_to_scalar, get_random_scalar, hash_to_scalar, point_to_bytes,
+    scalar_to_bytes,
 };
 use wedpr_l_protos::generated::zkp::BalanceProof;
 use wedpr_l_utils::error::WedprError;
@@ -27,7 +29,8 @@ pub fn prove_sum_relationship(
     c3_blinding: &Scalar,
     value_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
-) -> BalanceProof {
+) -> BalanceProof
+{
     let blinding_a = get_random_scalar();
     let blinding_b = get_random_scalar();
     let blinding_c = get_random_scalar();
@@ -48,14 +51,14 @@ pub fn prove_sum_relationship(
         ],
         &[*value_basepoint, *blinding_basepoint],
     );
-    let t1_p = RistrettoPoint::multiscalar_mul(
-        &[blinding_a, blinding_b],
-        &[*value_basepoint, *blinding_basepoint],
-    );
-    let t2_p = RistrettoPoint::multiscalar_mul(
-        &[blinding_c, blinding_d],
-        &[*value_basepoint, *blinding_basepoint],
-    );
+    let t1_p = RistrettoPoint::multiscalar_mul(&[blinding_a, blinding_b], &[
+        *value_basepoint,
+        *blinding_basepoint,
+    ]);
+    let t2_p = RistrettoPoint::multiscalar_mul(&[blinding_c, blinding_d], &[
+        *value_basepoint,
+        *blinding_basepoint,
+    ]);
     let t3_p = RistrettoPoint::multiscalar_mul(
         &[(blinding_a + blinding_c), blinding_e],
         &[*value_basepoint, *blinding_basepoint],
@@ -96,25 +99,29 @@ pub fn verify_sum_relationship(
     proof: &BalanceProof,
     value_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
-) -> Result<bool, WedprError> {
+) -> Result<bool, WedprError>
+{
     let check = bytes_to_scalar(proof.get_c())?;
     let m1 = bytes_to_scalar(proof.get_m1())?;
     let m2 = bytes_to_scalar(proof.get_m2())?;
     let m3 = bytes_to_scalar(proof.get_m3())?;
     let m4 = bytes_to_scalar(proof.get_m4())?;
     let m5 = bytes_to_scalar(proof.get_m5())?;
-    let t1_v = RistrettoPoint::multiscalar_mul(
-        &[m1, m2, check],
-        &[*value_basepoint, *blinding_basepoint, *c1_point],
-    );
-    let t2_v = RistrettoPoint::multiscalar_mul(
-        &[m3, m4, check],
-        &[*value_basepoint, *blinding_basepoint, *c2_point],
-    );
-    let t3_v = RistrettoPoint::multiscalar_mul(
-        &[m1 + (m3), m5, check],
-        &[*value_basepoint, *blinding_basepoint, *c3_point],
-    );
+    let t1_v = RistrettoPoint::multiscalar_mul(&[m1, m2, check], &[
+        *value_basepoint,
+        *blinding_basepoint,
+        *c1_point,
+    ]);
+    let t2_v = RistrettoPoint::multiscalar_mul(&[m3, m4, check], &[
+        *value_basepoint,
+        *blinding_basepoint,
+        *c2_point,
+    ]);
+    let t3_v = RistrettoPoint::multiscalar_mul(&[m1 + (m3), m5, check], &[
+        *value_basepoint,
+        *blinding_basepoint,
+        *c3_point,
+    ]);
     let mut hash_vec = Vec::new();
     hash_vec.append(&mut point_to_bytes(&t1_v));
     hash_vec.append(&mut point_to_bytes(&t2_v));
@@ -145,7 +152,8 @@ pub fn prove_product_relationship(
     c3_blinding: &Scalar,
     value_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
-) -> BalanceProof {
+) -> BalanceProof
+{
     let blinding_a = get_random_scalar();
     let blinding_b = get_random_scalar();
     let blinding_c = get_random_scalar();
@@ -167,14 +175,14 @@ pub fn prove_product_relationship(
         &[*value_basepoint, *blinding_basepoint],
     );
 
-    let t1_p = RistrettoPoint::multiscalar_mul(
-        &[blinding_a, blinding_b],
-        &[*value_basepoint, *blinding_basepoint],
-    );
-    let t2_p = RistrettoPoint::multiscalar_mul(
-        &[blinding_c, blinding_d],
-        &[*value_basepoint, *blinding_basepoint],
-    );
+    let t1_p = RistrettoPoint::multiscalar_mul(&[blinding_a, blinding_b], &[
+        *value_basepoint,
+        *blinding_basepoint,
+    ]);
+    let t2_p = RistrettoPoint::multiscalar_mul(&[blinding_c, blinding_d], &[
+        *value_basepoint,
+        *blinding_basepoint,
+    ]);
     let t3_p = RistrettoPoint::multiscalar_mul(
         &[blinding_a * (blinding_c), blinding_e],
         &[*value_basepoint, *blinding_basepoint],
@@ -197,7 +205,8 @@ pub fn prove_product_relationship(
     let m4 = blinding_d - (check * c2_blinding);
     let c_index2 = check * check;
     let m5 = blinding_e
-        + c_index2 * ((value1 * c2_blinding) - c3_blinding + (value2 * c1_blinding))
+        + c_index2
+            * ((value1 * c2_blinding) - c3_blinding + (value2 * c1_blinding))
         - check * ((blinding_a * c2_blinding) + (blinding_c * c1_blinding));
 
     let mut proof = BalanceProof::new();
@@ -220,7 +229,8 @@ pub fn verify_product_relationship(
     proof: &BalanceProof,
     value_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
-) -> Result<bool, WedprError> {
+) -> Result<bool, WedprError>
+{
     let check = bytes_to_scalar(proof.get_c())?;
     let m1 = bytes_to_scalar(proof.get_m1())?;
     let m2 = bytes_to_scalar(proof.get_m2())?;
@@ -228,14 +238,16 @@ pub fn verify_product_relationship(
     let m4 = bytes_to_scalar(proof.get_m4())?;
     let m5 = bytes_to_scalar(proof.get_m5())?;
 
-    let t1_v = RistrettoPoint::multiscalar_mul(
-        &[m1, m2, check],
-        &[*value_basepoint, *blinding_basepoint, *c1_point],
-    );
-    let t2_v = RistrettoPoint::multiscalar_mul(
-        &[m3, m4, check],
-        &[*value_basepoint, *blinding_basepoint, *c2_point],
-    );
+    let t1_v = RistrettoPoint::multiscalar_mul(&[m1, m2, check], &[
+        *value_basepoint,
+        *blinding_basepoint,
+        *c1_point,
+    ]);
+    let t2_v = RistrettoPoint::multiscalar_mul(&[m3, m4, check], &[
+        *value_basepoint,
+        *blinding_basepoint,
+        *c2_point,
+    ]);
     let t3_v = RistrettoPoint::multiscalar_mul(
         &[m1 * m3, m5, check * check, check * m3, check * m1],
         &[

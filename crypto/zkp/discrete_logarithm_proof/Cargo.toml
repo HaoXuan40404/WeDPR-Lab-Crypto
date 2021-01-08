@@ -12,4 +12,3 @@ wedpr_l_crypto_zkp_utils = { path = "../utils", version = "1.0.0" }
 wedpr_l_macros = { path = "../../../common/macros", version = "1.0.0" }
 wedpr_l_protos = { path = "../../../protos", version = "1.0.0" }
 wedpr_l_utils = { path = "../../../common/utils", version = "1.0.0" }
-
