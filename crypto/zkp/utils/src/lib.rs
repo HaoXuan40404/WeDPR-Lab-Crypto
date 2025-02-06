@@ -379,7 +379,7 @@ fn to_bytes32_slice(barry: &[u8]) -> Result<&[u8; 32], WedprError> {
 /// Converts a vector to Scalar.
 pub fn bytes_to_scalar(input: &[u8]) -> Result<Scalar, WedprError> {
     let get_num_u8 = to_bytes32_slice(&input)?;
-    let scalar_num = Scalar::from_bits(*get_num_u8);
+    let scalar_num = Scalar::from_bytes_mod_order(*get_num_u8);
     Ok(scalar_num)
 }
 
@@ -399,7 +399,17 @@ pub fn bytes_to_point(point: &[u8]) -> Result<RistrettoPoint, WedprError> {
         wedpr_println!("bytes_to_point decode failed");
         return Err(WedprError::FormatError);
     }
-    let point_value = match CompressedRistretto::from_slice(&point).decompress()
+    let point_value_result = match CompressedRistretto::from_slice(&point)
+    {
+        Ok(v) => v,
+        Err(_e) => {
+            wedpr_println!(
+                "bytes_to_point decompress CompressedRistretto failed"
+            );
+            return Err(WedprError::FormatError);
+        },
+    };
+    let point_value = match point_value_result.decompress()
     {
         Some(v) => v,
         None => {
