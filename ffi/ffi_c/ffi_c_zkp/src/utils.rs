@@ -11,6 +11,16 @@ use wedpr_l_utils::error::WedprError;
 
 // From Rust to C/C++.
 use libc::c_char;
+
+pub unsafe fn c_input_buffer_to_vec(
+    input_data: &CInputBuffer,
+) -> Result<Vec<u8>, WedprError> {
+    let rust_bytes_input = c_read_raw_pointer(&input_data);
+    // avoid the input c buffer been released
+    // std::mem::forget(rust_bytes_input);
+    Ok(rust_bytes_input)
+}
+
 pub unsafe fn c_input_buffer_to_point(
     input_data: &CInputBuffer,
 ) -> Result<RistrettoPoint, WedprError> {

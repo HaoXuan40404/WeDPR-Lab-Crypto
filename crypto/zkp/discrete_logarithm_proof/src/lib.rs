@@ -279,8 +279,8 @@ pub fn verify_knowledge_proof_in_batch(
     }
     let mut t1_sum_expected: RistrettoPoint = Default::default();
     let mut c1_c_expected: RistrettoPoint = Default::default();
-    let mut m1_expected: Scalar = Scalar::zero();
-    let mut m2_expected: Scalar = Scalar::zero();
+    let mut m1_expected: Scalar = Scalar::from(0u8);
+    let mut m2_expected: Scalar = Scalar::from(0u8);
 
     for i in 0..c_point_list.len() {
         // 8 bit random scalar
@@ -418,8 +418,8 @@ pub fn verify_format_proof_in_batch(
     let mut t2_sum_expected: RistrettoPoint = Default::default();
     let mut c1_c_expected: RistrettoPoint = Default::default();
     let mut c2_c_expected: RistrettoPoint = Default::default();
-    let mut m1_expected: Scalar = Scalar::zero();
-    let mut m2_expected: Scalar = Scalar::zero();
+    let mut m1_expected: Scalar = Scalar::from(0u8);
+    let mut m2_expected: Scalar = Scalar::from(0u8);
 
     for i in 0..c1_point_list.len() {
         // 8 bit random scalar
@@ -606,11 +606,11 @@ pub fn verify_sum_relationship_in_batch(
     let mut c1_c_expected: RistrettoPoint = Default::default();
     let mut c2_c_expected: RistrettoPoint = Default::default();
     let mut c3_c_expected: RistrettoPoint = Default::default();
-    let mut m1_expected: Scalar = Scalar::zero();
-    let mut m2_expected: Scalar = Scalar::zero();
-    let mut m3_expected: Scalar = Scalar::zero();
-    let mut m4_expected: Scalar = Scalar::zero();
-    let mut m5_expected: Scalar = Scalar::zero();
+    let mut m1_expected: Scalar = Scalar::from(0u8);
+    let mut m2_expected: Scalar = Scalar::from(0u8);
+    let mut m3_expected: Scalar = Scalar::from(0u8);
+    let mut m4_expected: Scalar = Scalar::from(0u8);
+    let mut m5_expected: Scalar = Scalar::from(0u8);
     for i in 0..c1_point_list.len() {
         // 8 bit random scalar
         let random_scalar = get_random_u8();
@@ -832,12 +832,12 @@ pub fn verify_product_relationship_in_batch(
     let mut t3_c1_c_expected: RistrettoPoint = Default::default();
     let mut t3_c2_c_expected: RistrettoPoint = Default::default();
     let mut t3_c3_c_expected: RistrettoPoint = Default::default();
-    let mut m1_expected: Scalar = Scalar::zero();
-    let mut m1_m3_expected: Scalar = Scalar::zero();
-    let mut m2_expected: Scalar = Scalar::zero();
-    let mut m3_expected: Scalar = Scalar::zero();
-    let mut m4_expected: Scalar = Scalar::zero();
-    let mut m5_expected: Scalar = Scalar::zero();
+    let mut m1_expected: Scalar = Scalar::from(0u8);
+    let mut m1_m3_expected: Scalar = Scalar::from(0u8);
+    let mut m2_expected: Scalar = Scalar::from(0u8);
+    let mut m3_expected: Scalar = Scalar::from(0u8);
+    let mut m4_expected: Scalar = Scalar::from(0u8);
+    let mut m5_expected: Scalar = Scalar::from(0u8);
     for i in 0..c1_point_list.len() {
         // 8 bit random scalar
         let random_scalar = get_random_u8();
@@ -988,7 +988,7 @@ pub fn verify_equality_relationship_proof_in_batch(
     let mut t2_sum_expected: RistrettoPoint = Default::default();
     let mut c1_c_expected: RistrettoPoint = Default::default();
     let mut c2_c_expected: RistrettoPoint = Default::default();
-    let mut m1_expected: Scalar = Scalar::zero();
+    let mut m1_expected: Scalar = Scalar::from(0u8);
     for i in 0..c1_point_list.len() {
         // 8 bit random scalar
         let random_scalar = get_random_u8();
@@ -1071,7 +1071,7 @@ mod tests {
             &[c_basepoint, blinding_basepoint],
         );
         let c3_point =
-            RistrettoPoint::multiscalar_mul(&[Scalar::zero(), c3_blinding], &[
+            RistrettoPoint::multiscalar_mul(&[Scalar::from(0u8), c3_blinding], &[
                 c_basepoint,
                 blinding_basepoint,
             ]);

@@ -168,7 +168,7 @@ fn create_point_mul_helper(c: &mut Criterion) {
 
 fn create_point_mul_1_helper(c: &mut Criterion) {
     let label = format!("create_point_mul_1_helper",);
-    let scalar_1 = Scalar::one();
+    let scalar_1 = Scalar::from(1u8);
     let value_basepoint = *BASEPOINT_G1;
     c.bench_function(&label, move |b| b.iter(|| scalar_1 * value_basepoint));
 }
