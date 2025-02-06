@@ -17,8 +17,9 @@ pub unsafe fn c_input_buffer_to_vec(
 ) -> Result<Vec<u8>, WedprError> {
     let rust_bytes_input = c_read_raw_pointer(&input_data);
     // avoid the input c buffer been released
-    // std::mem::forget(rust_bytes_input);
-    Ok(rust_bytes_input)
+    let result = rust_bytes_input.clone();
+    std::mem::forget(rust_bytes_input);
+    Ok(result)
 }
 
 pub unsafe fn c_input_buffer_to_point(

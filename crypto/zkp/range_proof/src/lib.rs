@@ -206,6 +206,10 @@ pub fn verify_value_range_in_batch(
 
 #[cfg(test)]
 mod tests {
+    use wedpr_l_crypto_zkp_utils::point_to_bytes;
+    extern crate hex;
+
+
     use super::*;
 
     #[test]
@@ -256,5 +260,31 @@ mod tests {
             )
             .unwrap_err()
         );
+    }
+
+    #[test]
+    fn test_range_proof_single() {
+        let blinding_basepoint = *BASEPOINT_G2;
+        let value = 1;
+        let blinding = get_random_scalar();
+        let (proof, commitment) =
+            prove_value_range_with_blinding_and_blinding_basepoint(
+                value,
+                &blinding,
+                &blinding_basepoint,
+            );
+        assert_eq!(
+            true,
+            verify_value_range_with_blinding_basepoint(
+                &commitment,
+                &proof,
+                &blinding_basepoint,
+            )
+        );
+
+        wedpr_println!("commitment: {:?}", hex::encode(&point_to_bytes(&commitment)));
+        wedpr_println!("proof: {:?}", hex::encode(&proof));
+        wedpr_println!("blinding_basepoint: {:?}", hex::encode(&point_to_bytes(&blinding_basepoint)));
+
     }
 }

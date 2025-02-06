@@ -2940,6 +2940,7 @@ dependencies = [
  "bulletproofs",
  "criterion 0.5.1",
  "curve25519-dalek 4.1.3",
+ "hex",
  "merlin",
  "wedpr_l_crypto_zkp_utils 1.3.0",
  "wedpr_l_macros 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
