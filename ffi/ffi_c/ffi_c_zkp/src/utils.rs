@@ -6,6 +6,7 @@ use wedpr_ffi_common::utils::{
 use wedpr_l_crypto_zkp_utils::{
     bytes_to_point, bytes_to_scalar, ArithmeticProof, BalanceProof,
     Deserialize, EqualityProof, FormatProof, KnowledgeProof, Serialize,
+    ValueQualityProof,
 };
 use wedpr_l_utils::error::WedprError;
 
@@ -174,4 +175,28 @@ pub unsafe fn read_c_equality_proof(
     // avoid the input c buffer been released
     std::mem::forget(proof);
     equality_proof
+}
+
+pub unsafe fn write_value_equality_proof(
+    value_equality_proof: &ValueQualityProof,
+    c_value_equality_proof: &mut COutputBuffer,
+) {
+    c_write_data_to_pointer(
+        &value_equality_proof.serialize(),
+        c_value_equality_proof.data,
+        c_value_equality_proof.len,
+    );
+}
+
+pub unsafe fn read_c_value_equality_proof(
+    c_value_equality_proof: &CInputBuffer,
+) -> Result<ValueQualityProof, WedprError> {
+    let proof = c_read_raw_data_pointer(
+        c_value_equality_proof.data,
+        c_value_equality_proof.len,
+    );
+    let value_equality_proof = Deserialize::deserialize(&proof);
+    // avoid the input c buffer been released
+    std::mem::forget(proof);
+    value_equality_proof
 }

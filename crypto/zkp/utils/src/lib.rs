@@ -50,6 +50,49 @@ pub trait Deserialize: Sized {
 // For example, given C(x), C(y), C(z), this proof data can be used to
 // verify whether x * y =? z.
 #[derive(Default, Debug, Clone)]
+pub struct ValueQualityProof {
+    pub check: Scalar,
+    pub m1: Scalar,
+    pub m2: Scalar,
+}
+
+impl Serialize for ValueQualityProof {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(3 * SCALAR_SIZE_IN_BYTE);
+        buf.extend(&(scalar_to_bytes(&self.check)));
+        buf.extend(&(scalar_to_bytes(&self.m1)));
+        buf.extend(&(scalar_to_bytes(&self.m2)));
+        buf
+    }
+}
+
+impl Deserialize for ValueQualityProof {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < 3 * SCALAR_SIZE_IN_BYTE {
+            return Err(WedprError::ArgumentError);
+        }
+        // decode check
+        let mut offset = 0;
+        let check =
+            bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        // decode m1
+        offset += SCALAR_SIZE_IN_BYTE;
+        let m1 = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        // decode m2
+        offset += SCALAR_SIZE_IN_BYTE;
+        let m2 = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        Ok(ValueQualityProof {
+            check: check,
+            m1: m1,
+            m2: m2,
+        })
+    }
+}
+
+// ZKP data to verify the balance relationship among value commitments.
+// For example, given C(x), C(y), C(z), this proof data can be used to
+// verify whether x * y =? z.
+#[derive(Default, Debug, Clone)]
 pub struct BalanceProof {
     pub check1: Scalar,
     pub check2: Scalar,

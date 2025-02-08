@@ -1,11 +1,16 @@
 use crate::utils::{
     c_input_buffer_to_point, c_input_buffer_to_scalar, read_c_arithmetic_proof,
     read_c_balance_proof, read_c_equality_proof, read_c_format_proof,
-    read_c_knowledge_proof, write_arithmetic_proof, write_balance_proof,
-    write_equality_proof, write_format_proof, write_knowledger_proof,
+    read_c_knowledge_proof, read_c_value_equality_proof,
+    write_arithmetic_proof, write_balance_proof, write_equality_proof,
+    write_format_proof, write_knowledger_proof, write_value_equality_proof,
 };
 use wedpr_ffi_common::utils::{CInputBuffer, COutputBuffer, FAILURE, SUCCESS};
-use wedpr_l_crypto_zkp_utils::point_to_slice;
+use wedpr_l_crypto_zkp_discrete_logarithm_proof::{
+    prove_value_equality_relationship_proof,
+    verify_value_equality_relationship_proof,
+};
+use wedpr_l_crypto_zkp_utils::{point_to_slice, BASEPOINT_G1, BASEPOINT_G2};
 
 use wedpr_ffi_common::utils::c_write_data_to_pointer;
 
@@ -702,6 +707,154 @@ pub unsafe extern "C" fn wedpr_verify_equality_relationship_proof(
         &equality_proof,
         &basepoint1,
         &basepoint2,
+    );
+    let verify_result = match result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    if verify_result {
+        return SUCCESS;
+    }
+    return FAILURE;
+}
+
+#[no_mangle]
+/// C interface for 'wedpr_verify_knowledge_proof_without_basepoint'.
+pub unsafe extern "C" fn wedpr_verify_knowledge_proof_without_basepoint(
+    c_point_data: &CInputBuffer,
+    proof: &CInputBuffer,
+) -> i8 {
+    // c_point
+    let c_point_result = c_input_buffer_to_point(c_point_data);
+    let c_point = match c_point_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // KnowledgeProof
+    let knowledge_proof_result = read_c_knowledge_proof(proof);
+    let knowledge_proof = match knowledge_proof_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // verify_knowledge_proof
+    let result = verify_knowledge_proof(
+        &c_point,
+        &knowledge_proof,
+        &BASEPOINT_G1,
+        &BASEPOINT_G2,
+    );
+    let verify_result = match result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    if verify_result {
+        return SUCCESS;
+    }
+    FAILURE
+}
+
+#[no_mangle]
+/// C interface for 'wedpr_verify_sum_relationship_without_basepoint'.
+pub unsafe extern "C" fn wedpr_verify_sum_relationship_without_basepoint(
+    c1_point_data: &CInputBuffer,
+    c2_point_data: &CInputBuffer,
+    c3_point_data: &CInputBuffer,
+    proof: &CInputBuffer,
+) -> i8 {
+    // c1_point
+    let c1_point_result = c_input_buffer_to_point(c1_point_data);
+    let c1_point = match c1_point_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // c2_point
+    let c2_point_result = c_input_buffer_to_point(c2_point_data);
+    let c2_point = match c2_point_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // c3_point
+    let c3_point_result = c_input_buffer_to_point(c3_point_data);
+    let c3_point = match c3_point_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // proof
+    let arithmetic_proof_result = read_c_arithmetic_proof(proof);
+    let arithmetic_proof = match arithmetic_proof_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    let result = verify_sum_relationship(
+        &c1_point,
+        &c2_point,
+        &c3_point,
+        &arithmetic_proof,
+        &BASEPOINT_G1,
+        &BASEPOINT_G2,
+    );
+    let verify_result = match result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    if verify_result {
+        return SUCCESS;
+    }
+    return FAILURE;
+}
+
+#[no_mangle]
+/// C interface for
+/// 'wedpr_generate_value_equality_relationship_proof_without_basepoint'.
+pub unsafe extern "C" fn wedpr_generate_value_equality_relationship_proof_without_basepoint(
+    c_value: u64,
+    c_blinding_data: &CInputBuffer,
+    generated_proof: &mut COutputBuffer,
+) -> i8 {
+    // c_blinding
+    let c_blinding_result = c_input_buffer_to_scalar(c_blinding_data);
+    let c_blinding = match c_blinding_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+
+    let equality_proof = prove_value_equality_relationship_proof(
+        c_value,
+        &c_blinding,
+        &BASEPOINT_G1,
+        &BASEPOINT_G2,
+    );
+    write_value_equality_proof(&equality_proof, generated_proof);
+    SUCCESS
+}
+
+#[no_mangle]
+/// C interface for
+/// 'wedpr_verify_value_equality_relationship_proof_without_basepoint'.
+pub unsafe extern "C" fn wedpr_verify_value_equality_relationship_proof_without_basepoint(
+    c_value: u64,
+    c_point_data: &CInputBuffer,
+    proof: &CInputBuffer,
+) -> i8 {
+    // c_point
+    let c_point_result = c_input_buffer_to_point(c_point_data);
+    let c_point = match c_point_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // ValueEqualityProof
+    let value_equality_proof_result = read_c_value_equality_proof(proof);
+    let value_equality_proof = match value_equality_proof_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // verify_value_equality_relationship_proof
+    let result = verify_value_equality_relationship_proof(
+        c_value,
+        &c_point,
+        &value_equality_proof,
+        &BASEPOINT_G1,
+        &BASEPOINT_G2,
     );
     let verify_result = match result {
         Ok(v) => v,

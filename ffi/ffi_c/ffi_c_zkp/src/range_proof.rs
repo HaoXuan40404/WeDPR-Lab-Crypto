@@ -10,6 +10,7 @@ use wedpr_ffi_common::utils::c_write_data_to_pointer;
 use wedpr_l_crypto_zkp_range_proof::{
     prove_value_range_with_blinding_and_blinding_basepoint, verify_value_range_with_blinding_basepoint
 };
+use wedpr_l_crypto_zkp_utils::BASEPOINT_G2;
 
 #[no_mangle]
 /// C interface for 'wedpr_generate_range_proof'.
@@ -76,6 +77,37 @@ pub unsafe extern "C" fn wedpr_verify_range_proof(
         &c_point,
         &range_proof,
         &blinding_basepoint,
+    );
+    if result {
+        return SUCCESS;
+    }
+    FAILURE
+}
+
+
+#[no_mangle]
+/// C interface for 'wedpr_verify_range_proof_without_basepoint'.
+pub unsafe extern "C" fn wedpr_verify_range_proof_without_basepoint(
+    commitment_point_data: &CInputBuffer,
+    proof: &CInputBuffer,
+) -> i8 {
+    // c_point
+    let c_point_result = c_input_buffer_to_point(commitment_point_data);
+    let c_point = match c_point_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // range_proof
+    let range_proof_result = c_input_buffer_to_vec(proof);
+    let range_proof = match range_proof_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+
+    let result = verify_value_range_with_blinding_basepoint(
+        &c_point,
+        &range_proof,
+        &BASEPOINT_G2,
     );
     if result {
         return SUCCESS;

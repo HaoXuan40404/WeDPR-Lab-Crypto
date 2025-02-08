@@ -16,5 +16,10 @@ int8_t wedpr_generate_range_proof(uint64_t c_value,
 int8_t wedpr_verify_range_proof(const CInputBuffer *commitment_point_data,
                                 const CInputBuffer *proof,
                                 const CInputBuffer *blinding_basepoint_data);
+/**
+ * C interface for 'wedpr_verify_range_proof_without_basepoint'.
+ */
+int8_t wedpr_verify_range_proof_without_basepoint(
+    const CInputBuffer *commitment_point_data, const CInputBuffer *proof);
 }
 #endif

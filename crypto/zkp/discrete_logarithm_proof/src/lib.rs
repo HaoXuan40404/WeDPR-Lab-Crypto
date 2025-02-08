@@ -10,6 +10,7 @@ use rand::Rng;
 use wedpr_l_crypto_zkp_utils::{
     get_random_scalar, hash_to_scalar, point_to_bytes, ArithmeticProof,
     BalanceProof, EqualityProof, FormatProof, KnowledgeProof,
+    ValueQualityProof,
 };
 
 use wedpr_l_utils::error::WedprError;
@@ -19,6 +20,68 @@ pub fn aggregate_ristretto_point(
     point_share: &RistrettoPoint,
 ) -> Result<RistrettoPoint, WedprError> {
     Ok(point_sum + point_share)
+}
+
+/// Proves a value with a commitments satisfying an equality relationship, i.e.
+/// the value embedded in c_point = c_value * c_basepoint + c_blinding *
+/// blinding_basepoint. It returns a proof for the above equality relationship.
+pub fn prove_value_equality_relationship_proof(
+    c_value: u64,
+    c_blinding: &Scalar,
+    c_basepoint: &RistrettoPoint,
+    blinding_basepoint: &RistrettoPoint,
+) -> ValueQualityProof {
+    let blinding_a = get_random_scalar();
+    let blinding_b = get_random_scalar();
+    let t1 = blinding_a * c_basepoint;
+    let t2 = blinding_a * c_basepoint + blinding_b * blinding_basepoint;
+    let c_value_scalar = Scalar::from(c_value);
+    let c_point =
+        c_value_scalar * c_basepoint + c_blinding * blinding_basepoint;
+    let mut hash_vec = Vec::new();
+    hash_vec.append(&mut point_to_bytes(&t1));
+    hash_vec.append(&mut point_to_bytes(&t2));
+    hash_vec.append(&mut point_to_bytes(&c_point));
+    hash_vec.append(&mut c_value.to_be_bytes().to_vec());
+    hash_vec.append(&mut point_to_bytes(c_basepoint));
+    hash_vec.append(&mut point_to_bytes(blinding_basepoint));
+    let check = hash_to_scalar(&hash_vec);
+    let m1 = blinding_a - (check * c_value_scalar);
+    let m2 = blinding_b - (check * c_blinding);
+    return ValueQualityProof { check, m1, m2 };
+}
+
+/// Verifies a commitment satisfying an equality relationship, i.e.
+/// the value embedded in c_point = c_value * c_basepoint + c_blinding *
+/// blinding_basepoint.
+/// It returns a proof for the above equality relationship.
+pub fn verify_value_equality_relationship_proof(
+    c_value: u64,
+    c_point: &RistrettoPoint,
+    proof: &ValueQualityProof,
+    c_basepoint: &RistrettoPoint,
+    blinding_basepoint: &RistrettoPoint,
+) -> Result<bool, WedprError> {
+    let c_value_scalar = Scalar::from(c_value);
+
+    let t1 =
+        c_value_scalar * proof.check * c_basepoint + proof.m1 * c_basepoint;
+    let t2 = proof.check * c_point
+        + proof.m1 * c_basepoint
+        + proof.m2 * blinding_basepoint;
+    let mut hash_vec = Vec::new();
+    hash_vec.append(&mut point_to_bytes(&t1));
+    hash_vec.append(&mut point_to_bytes(&t2));
+    hash_vec.append(&mut point_to_bytes(&c_point));
+    hash_vec.append(&mut c_value.to_be_bytes().to_vec());
+    hash_vec.append(&mut point_to_bytes(c_basepoint));
+    hash_vec.append(&mut point_to_bytes(blinding_basepoint));
+    let check = hash_to_scalar(&hash_vec);
+
+    if check == proof.check {
+        return Ok(true);
+    }
+    Ok(false)
 }
 
 /// Proves three commitments satisfying either or equality relationships, i.e.
@@ -1070,11 +1133,10 @@ mod tests {
             &[Scalar::from(c2_value), c2_blinding],
             &[c_basepoint, blinding_basepoint],
         );
-        let c3_point =
-            RistrettoPoint::multiscalar_mul(&[Scalar::from(0u8), c3_blinding], &[
-                c_basepoint,
-                blinding_basepoint,
-            ]);
+        let c3_point = RistrettoPoint::multiscalar_mul(
+            &[Scalar::from(0u8), c3_blinding],
+            &[c_basepoint, blinding_basepoint],
+        );
 
         let proof = prove_either_equality_relationship_proof(
             c1_value,
@@ -1791,5 +1853,29 @@ mod tests {
                 point_to_bytes(&expect_point)
             );
         }
+    }
+
+    #[test]
+    fn test_value_equality_proof() {
+        let c1_value = 100u64;
+        let c1_scalar = Scalar::from(c1_value);
+        let c1_blinding = get_random_scalar();
+        let commitment = c1_scalar * *BASEPOINT_G1 + c1_blinding * *BASEPOINT_G2;
+
+        let proof = prove_value_equality_relationship_proof(c1_value, &c1_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+        assert_eq!(true, verify_value_equality_relationship_proof(c1_value, &commitment, &proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+
+        let c2_value = 101u64;
+        let c2_scalar = Scalar::from(c2_value);
+        let c2_blinding = get_random_scalar();
+
+        assert_eq!(false, verify_value_equality_relationship_proof(c2_value, &commitment, &proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+
+        let commitment2 = c2_scalar * *BASEPOINT_G1 + c2_blinding * *BASEPOINT_G2;
+        let proof2 = prove_value_equality_relationship_proof(c2_value, &c2_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+        assert_eq!(true, verify_value_equality_relationship_proof(c2_value, &commitment2, &proof2, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+
+        let result = verify_value_equality_relationship_proof(c2_value, &commitment, &proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap();
+        assert_eq!(false, result);
     }
 }
