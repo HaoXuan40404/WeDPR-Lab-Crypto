@@ -1,13 +1,14 @@
 use crate::utils::{
     c_input_buffer_to_point, c_input_buffer_to_scalar, read_c_arithmetic_proof,
-    read_c_balance_proof, read_c_equality_proof, read_c_format_proof,
-    read_c_knowledge_proof, read_c_value_equality_proof,
-    write_arithmetic_proof, write_balance_proof, write_equality_proof,
-    write_format_proof, write_knowledger_proof, write_value_equality_proof,
+    read_c_balance_proof, read_c_commitments, read_c_equality_proof,
+    read_c_format_proof, read_c_knowledge_proof, read_c_relationship_proof,
+    read_c_value_equality_proof, write_arithmetic_proof, write_balance_proof,
+    write_equality_proof, write_format_proof, write_knowledger_proof,
+    write_value_equality_proof,
 };
 use wedpr_ffi_common::utils::{CInputBuffer, COutputBuffer, FAILURE, SUCCESS};
 use wedpr_l_crypto_zkp_discrete_logarithm_proof::{
-    prove_value_equality_relationship_proof,
+    prove_value_equality_relationship_proof, verify_multi_sum_relationship,
     verify_value_equality_relationship_proof,
 };
 use wedpr_l_crypto_zkp_utils::{point_to_slice, BASEPOINT_G1, BASEPOINT_G2};
@@ -853,6 +854,50 @@ pub unsafe extern "C" fn wedpr_verify_value_equality_relationship_proof_without_
         c_value,
         &c_point,
         &value_equality_proof,
+        &BASEPOINT_G1,
+        &BASEPOINT_G2,
+    );
+    let verify_result = match result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    if verify_result {
+        return SUCCESS;
+    }
+    return FAILURE;
+}
+
+#[no_mangle]
+/// C interface for
+/// 'wedpr_verify_multi_sum_relationship_without_basepoint'.
+pub unsafe extern "C" fn wedpr_verify_multi_sum_relationship_without_basepoint(
+    input_point_list_data: &CInputBuffer,
+    output_point_list_data: &CInputBuffer,
+    proof: &CInputBuffer,
+) -> i8 {
+    // input_point_list
+    let input_point_list_result = read_c_commitments(input_point_list_data);
+    let input_point_list = match input_point_list_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    // output_point_list
+    let output_point_list_result = read_c_commitments(output_point_list_data);
+    let output_point_list = match output_point_list_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+
+    // proof
+    let relationship_proof_result = read_c_relationship_proof(proof);
+    let relationship_proof = match relationship_proof_result {
+        Ok(v) => v,
+        Err(_) => return FAILURE,
+    };
+    let result = verify_multi_sum_relationship(
+        &input_point_list,
+        &output_point_list,
+        &relationship_proof,
         &BASEPOINT_G1,
         &BASEPOINT_G2,
     );

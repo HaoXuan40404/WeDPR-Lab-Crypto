@@ -141,5 +141,12 @@ int8_t wedpr_verify_sum_relationship_without_basepoint(
 int8_t wedpr_verify_value_equality_relationship_proof_without_basepoint(
     int64_t c_value, const CInputBuffer *c_point_data,
     const CInputBuffer *proof);
+
+/**
+ * C interface for 'wedpr_verify_sum_relationship_without_basepoint'.
+ */
+ int8_t wedpr_verify_multi_sum_relationship_without_basepoint(
+    const CInputBuffer *input_point_data, const CInputBuffer *output_point_data,
+    const CInputBuffer *proof);
 }
 #endif

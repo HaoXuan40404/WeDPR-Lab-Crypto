@@ -5,8 +5,8 @@ use wedpr_ffi_common::utils::{
 };
 use wedpr_l_crypto_zkp_utils::{
     bytes_to_point, bytes_to_scalar, ArithmeticProof, BalanceProof,
-    Deserialize, EqualityProof, FormatProof, KnowledgeProof, Serialize,
-    ValueQualityProof,
+    Deserialize, EqualityProof, FormatProof, KnowledgeProof, RelationshipProof,
+    Serialize, ValueQualityProof,
 };
 use wedpr_l_utils::error::WedprError;
 
@@ -140,6 +140,43 @@ pub unsafe fn write_arithmetic_proof(
         c_arithmetic_proof_proof.data,
         c_arithmetic_proof_proof.len,
     );
+}
+
+pub unsafe fn write_commitments(commitments: &Vec<RistrettoPoint>, c_commitments: &mut COutputBuffer) {
+    let mut result = Vec::new();
+    for commitment in commitments {
+        result.extend_from_slice(&commitment.compress().to_bytes());
+    }
+    c_write_data_to_pointer(&result, c_commitments.data, c_commitments.len);
+}
+
+pub unsafe fn read_c_commitments(
+    c_commitments: &CInputBuffer,
+) -> Result<Vec<RistrettoPoint>, WedprError> {
+    let commitments = c_read_raw_pointer(c_commitments);
+    let mut result = Vec::new();
+    let mut index = 0;
+    while index < commitments.len() {
+        let point = bytes_to_point(&commitments[index..index + 32])?;
+        result.push(point);
+        index += 32;
+    }
+    // avoid the input c buffer been released
+    std::mem::forget(commitments);
+    Ok(result)
+}
+
+pub unsafe fn read_c_relationship_proof(
+    c_relationship_proof: &CInputBuffer,
+) -> Result<RelationshipProof, WedprError> {
+    let proof = c_read_raw_data_pointer(
+        c_relationship_proof.data,
+        c_relationship_proof.len,
+    );
+    let relationship_proof = Deserialize::deserialize(&proof);
+    // avoid the input c buffer been released
+    std::mem::forget(proof);
+    relationship_proof
 }
 
 pub unsafe fn read_c_arithmetic_proof(

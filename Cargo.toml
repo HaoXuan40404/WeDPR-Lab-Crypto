@@ -20,7 +20,7 @@ members = [
     "crypto/vrf/curve25519", "crypto/vrf/secp256k1",
     "crypto/zkp/discrete_logarithm_proof",
     "crypto/zkp/range_proof",
-    "crypto/zkp/utils",
+    "crypto/zkp/utils", "crypto/zkp/zktransfer",
     "ffi/ffi_c/ffi_c_common",
     "ffi/ffi_c/ffi_c_crypto",
     "ffi/ffi_c/ffi_c_crypto_binary",

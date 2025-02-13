@@ -260,6 +260,77 @@ impl Deserialize for FormatProof {
 }
 
 #[derive(Default, Debug, Clone)]
+pub struct RelationshipProof {
+    pub check: Scalar,
+    pub left_commit: Scalar,
+    pub m_list: Vec<Scalar>,
+    pub n_list: Vec<Scalar>,
+}
+
+impl Serialize for RelationshipProof {
+    fn serialize(&self) -> Vec<u8> {
+        if self.m_list.len() != self.n_list.len() {
+            return Vec::new();
+        }
+        let mut buf = Vec::with_capacity(
+            SCALAR_SIZE_IN_BYTE
+                + SCALAR_SIZE_IN_BYTE * self.m_list.len()
+                + SCALAR_SIZE_IN_BYTE * self.n_list.len(),
+        );
+        buf.push(self.m_list.len() as u8);
+        buf.extend(&(scalar_to_bytes(&self.check)));
+        buf.extend(&(scalar_to_bytes(&self.left_commit)));
+        for m in &self.m_list {
+            buf.extend(&(scalar_to_bytes(m)));
+        }
+        for n in &self.n_list {
+            buf.extend(&(scalar_to_bytes(n)));
+        }
+
+        buf
+    }
+    
+}
+
+impl Deserialize for RelationshipProof {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < 3 * SCALAR_SIZE_IN_BYTE {
+            return Err(WedprError::ArgumentError);
+        }
+        let mut offset = 0;
+        let m_list_len = bytes[offset];
+        offset += 1;
+        // decode check
+        let check = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        offset += SCALAR_SIZE_IN_BYTE;
+        // decode left_commit
+        let left_commit = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        offset += SCALAR_SIZE_IN_BYTE;
+        // decode m_list
+        let mut m_list = Vec::new();
+        for _ in 0..m_list_len {
+            let m = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+            m_list.push(m);
+            offset += SCALAR_SIZE_IN_BYTE;
+        }
+        // decode n_list
+        let mut n_list = Vec::new();
+        for _ in 0..m_list_len {
+            let n = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+            n_list.push(n);
+            offset += SCALAR_SIZE_IN_BYTE;
+        }
+        Ok(RelationshipProof {
+            check: check,
+            left_commit: left_commit,
+            m_list: m_list,
+            n_list: n_list,
+        })
+    }
+    
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct ArithmeticProof {
     pub t1: RistrettoPoint,
     pub t2: RistrettoPoint,
