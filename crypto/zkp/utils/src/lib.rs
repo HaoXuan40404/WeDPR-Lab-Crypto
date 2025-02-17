@@ -260,6 +260,43 @@ impl Deserialize for FormatProof {
 }
 
 #[derive(Default, Debug, Clone)]
+pub struct ReceiverRelationshipProofSetupPrivate {
+    pub f_blinding: Scalar
+}
+
+
+#[derive(Default, Debug, Clone)]
+pub struct ReceiverRelationshipProofSetupPublic {
+    pub f_commit: RistrettoPoint,
+    pub commitment: RistrettoPoint
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct SenderRelationshipProofSetupPrivate {
+    pub blinding_a: Scalar,
+    pub blinding_b: Scalar
+}
+
+
+#[derive(Default, Debug, Clone)]
+pub struct SenderRelationshipProofSetupPublic {
+    pub t_commit: RistrettoPoint,
+    pub a_commit: RistrettoPoint,
+    pub commitment: RistrettoPoint
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct SenderRelationshipProofFinalPublic {
+    pub m: Scalar,
+    pub n: Scalar
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct ReceiverRelationshipProofFinalPublic {
+    pub t_commit_share: Scalar,
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct RelationshipProof {
     pub check: Scalar,
     pub left_commit: Scalar,

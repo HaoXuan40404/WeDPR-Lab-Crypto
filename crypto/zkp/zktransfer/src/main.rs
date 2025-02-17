@@ -245,3 +245,146 @@ fn demo()
         hex::encode(&point_to_bytes(&c3_commitment))
     );
 }
+
+fn demo2(){
+    // 1. 生成commitment 生成value证明，链上入金
+    // value_proof证明commitment钱和value相等
+    let c1_value = 500u64;
+    let c1_scalar = Scalar::from(c1_value);
+    let c1_blinding = get_random_scalar();
+    let c1_commitment = c1_scalar * *BASEPOINT_G1 + c1_blinding * *BASEPOINT_G2;
+
+    let value_proof = prove_value_equality_relationship_proof(c1_value, &c1_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+    assert_eq!(true, verify_value_equality_relationship_proof(c1_value, &c1_commitment, &value_proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+
+    wedpr_println!(
+        "#c1_value: {:?}",
+        c1_value
+    );
+    wedpr_println!(
+        "#c1_commitment: {:?}",
+        hex::encode(&point_to_bytes(&c1_commitment))
+    );
+    wedpr_println!(
+        "#value_proof: {:?}",
+        hex::encode(value_proof.serialize())
+    );
+    
+    // 2. 生成transfer_proof，链上转账 
+    // knowledge proof证明拥有所有权
+    // balance proof 会计平衡
+    // range proof防止作恶
+    let knowledge_proof = prove_knowledge_proof(c1_value, &c1_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+    assert_eq!(true, verify_knowledge_proof(&c1_commitment, &knowledge_proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+    wedpr_println!(
+        "#c1 knowledge_proof: {:?}",
+        hex::encode(knowledge_proof.serialize())
+    );
+
+    let mut input_value_list = Vec::new();
+    let mut input_bliding_list = Vec::new();
+    input_value_list.push(c1_value);
+    input_bliding_list.push(c1_blinding);
+
+    let mut output_value_list = Vec::new();
+    let mut output_blinding_list = Vec::new();
+    let c2_value = 51u64;
+    let c2_scalar = Scalar::from(c2_value);
+    let c2_blinding = get_random_scalar();
+    let c2_commitment = c2_scalar * *BASEPOINT_G1 + c2_blinding * *BASEPOINT_G2;
+
+    let c3_value = c1_value - c2_value;
+    let c3_scalar = Scalar::from(c3_value);
+    let c3_blinding = get_random_scalar();
+    let c3_commitment = c3_scalar * *BASEPOINT_G1 + c3_blinding * *BASEPOINT_G2;
+    output_value_list.push(c2_value);
+    output_value_list.push(c3_value);
+    output_blinding_list.push(c2_blinding);
+    output_blinding_list.push(c3_blinding);
+
+    
+    let balance_proof = prove_multi_sum_relationship(
+        &input_value_list,
+        &input_bliding_list,
+        &output_value_list,
+        &output_blinding_list,
+        &BASEPOINT_G1,
+        &BASEPOINT_G2,
+    );
+
+    let input_commitments = vec![c1_commitment];
+    let output_commitments = vec![c2_commitment, c3_commitment];
+
+    wedpr_println!(
+        "#c2_value: {:?}",
+        c2_value
+    );
+    wedpr_println!(
+        "#c2_commitment: {:?}",
+        hex::encode(&point_to_bytes(&c2_commitment))
+    );
+    wedpr_println!(
+        "#c3_value: {:?}",
+        c3_value
+    );
+    wedpr_println!(
+        "#c3_commitment: {:?}",
+        hex::encode(&point_to_bytes(&c3_commitment))
+    );
+    wedpr_println!(
+        "#balance_proof: {:?}",
+        hex::encode(balance_proof.serialize())
+    );
+
+    assert_eq!(
+        true,
+        verify_multi_sum_relationship(
+            &input_commitments,
+            &output_commitments,
+            &balance_proof,
+            &BASEPOINT_G1,
+            &BASEPOINT_G2
+        )
+        .unwrap()
+    );
+
+    let (rangeproof_c2, expected_commitment2) = prove_value_range_with_blinding_and_blinding_basepoint(c2_value, &c2_blinding, &BASEPOINT_G2);
+    let (rangeproof_c3, expected_commitment3) = prove_value_range_with_blinding_and_blinding_basepoint(c3_value, &c3_blinding, &BASEPOINT_G2);
+
+    assert_eq!(true, c2_commitment == expected_commitment2);
+    assert_eq!(true, c3_commitment == expected_commitment3);
+
+    wedpr_println!(
+        "#rangeproof_c2: {:?}",
+        hex::encode(rangeproof_c2.clone())
+    );
+    wedpr_println!(
+        "#rangeproof_c3: {:?}",
+        hex::encode(rangeproof_c3.clone())
+    );
+
+    assert_eq!(true, verify_value_range_with_blinding_basepoint(&c2_commitment, &rangeproof_c2, &BASEPOINT_G2));
+    assert_eq!(true, verify_value_range_with_blinding_basepoint(&c3_commitment, &rangeproof_c3, &BASEPOINT_G2));
+
+    // 3. 生成 出金证明 将c3转出
+    // knowledge proof证明拥有所有权 
+    // value_proof证明commitment钱和value相等
+
+    let knowledge_proof = prove_knowledge_proof(c3_value, &c3_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+    assert_eq!(true, verify_knowledge_proof(&c3_commitment, &knowledge_proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+    wedpr_println!(
+        "c3 #knowledge_proof: {:?}",
+        hex::encode(knowledge_proof.serialize())
+    );
+
+    let value_proof = prove_value_equality_relationship_proof(c3_value, &c3_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+    assert_eq!(true, verify_value_equality_relationship_proof(c3_value, &c3_commitment, &value_proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
+    wedpr_println!(
+        "c3 #value_proof: {:?}",
+        hex::encode(value_proof.serialize())
+    );
+    wedpr_println!(
+        "#c3_commitment: {:?}",
+        hex::encode(&point_to_bytes(&c3_commitment))
+    );
+}

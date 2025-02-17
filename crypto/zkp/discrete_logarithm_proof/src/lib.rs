@@ -8,9 +8,7 @@ use curve25519_dalek::{
 };
 use rand::Rng;
 use wedpr_l_crypto_zkp_utils::{
-    get_random_scalar, hash_to_scalar, point_to_bytes, ArithmeticProof,
-    BalanceProof, EqualityProof, FormatProof, KnowledgeProof,
-    RelationshipProof, ValueQualityProof,
+    get_random_scalar, hash_to_scalar, point_to_bytes, ArithmeticProof, BalanceProof, EqualityProof, FormatProof, KnowledgeProof, ReceiverRelationshipProofFinalPublic, ReceiverRelationshipProofSetupPrivate, ReceiverRelationshipProofSetupPublic, RelationshipProof, SenderRelationshipProofFinalPublic, SenderRelationshipProofSetupPrivate, SenderRelationshipProofSetupPublic, ValueQualityProof
 };
 
 use wedpr_l_utils::error::WedprError;
@@ -524,6 +522,125 @@ pub fn verify_format_proof_in_batch(
     Ok(false)
 }
 
+pub fn sender_prove_multi_sum_relationship_setup(
+    input_value: u64,
+    input_blinding: &Scalar,
+    value_basepoint: &RistrettoPoint,
+    blinding_basepoint: &RistrettoPoint,
+) -> (
+    SenderRelationshipProofSetupPrivate,
+    SenderRelationshipProofSetupPublic,
+) {
+    let blinding_a = get_random_scalar();
+    let blinding_b = get_random_scalar();
+    let t_commit =
+        blinding_a * value_basepoint + blinding_b * blinding_basepoint;
+    let a_commit = blinding_a * value_basepoint;
+    let commit = Scalar::from(input_value) * value_basepoint
+        + input_blinding * blinding_basepoint;
+    return (
+        SenderRelationshipProofSetupPrivate {
+            blinding_a: blinding_a,
+            blinding_b: blinding_b,
+        },
+        SenderRelationshipProofSetupPublic {
+            t_commit: t_commit,
+            a_commit: a_commit,
+            commitment: commit,
+        },
+    );
+}
+
+pub fn receiver_prove_multi_sum_relationship_setup(
+    output_value: u64,
+    output_blinding: &Scalar,
+    value_basepoint: &RistrettoPoint,
+    blinding_basepoint: &RistrettoPoint,
+) -> (
+    ReceiverRelationshipProofSetupPrivate,
+    ReceiverRelationshipProofSetupPublic,
+) {
+    let blinding_f = get_random_scalar();
+    let f_commit = blinding_f * blinding_basepoint;
+    let commit = Scalar::from(output_value) * value_basepoint
+        + output_blinding * blinding_basepoint;
+    return (
+        ReceiverRelationshipProofSetupPrivate {
+            f_blinding: blinding_f,
+        },
+        ReceiverRelationshipProofSetupPublic {
+            f_commit: f_commit,
+            commitment: commit,
+        },
+    );
+}
+
+pub fn coordinator_prove_multi_sum_relationship_setup(
+    sender_setup_lists: &[SenderRelationshipProofSetupPublic],
+    receiver_setup_lists: &[ReceiverRelationshipProofSetupPublic],
+    value_basepoint: &RistrettoPoint,
+    blinding_basepoint: &RistrettoPoint,
+) -> Scalar {
+    let mut hash_vec = Vec::new();
+    hash_vec.append(&mut point_to_bytes(value_basepoint));
+    hash_vec.append(&mut point_to_bytes(blinding_basepoint));
+    let mut a_sum_commit = RistrettoPoint::default();
+    let mut f_sum_commit = RistrettoPoint::default();
+    for sender_setup in sender_setup_lists.iter() {
+        a_sum_commit += sender_setup.a_commit;
+        hash_vec.append(&mut point_to_bytes(&sender_setup.commitment));
+    }
+    for receiver_setup in receiver_setup_lists.iter() {
+        f_sum_commit += receiver_setup.f_commit;
+        hash_vec.append(&mut point_to_bytes(&receiver_setup.commitment));
+    }
+    for sender_setup in sender_setup_lists.iter() {
+        hash_vec.append(&mut point_to_bytes(&sender_setup.t_commit));
+    }
+    let t_commit = a_sum_commit + f_sum_commit;
+    hash_vec.append(&mut point_to_bytes(&t_commit));
+    return hash_to_scalar(&hash_vec);
+}
+
+pub fn sender_prove_multi_sum_relationship_final(input_value: u64, input_blinding: &Scalar, proof_secret: &SenderRelationshipProofSetupPrivate, check: &Scalar) -> SenderRelationshipProofFinalPublic {
+    let m = proof_secret.blinding_a - check * Scalar::from(input_value);
+    let n = proof_secret.blinding_b - check * input_blinding;
+    return SenderRelationshipProofFinalPublic {
+        m: m,
+        n: n,
+    };
+}
+
+pub fn receiver_prove_multi_sum_relationship_final(output_blinding: &Scalar, proof_secret: &ReceiverRelationshipProofSetupPrivate, check: &Scalar) -> ReceiverRelationshipProofFinalPublic {
+    let t_commit_share = proof_secret.f_blinding - check * output_blinding;
+    return ReceiverRelationshipProofFinalPublic {
+        t_commit_share: t_commit_share,
+    };
+}
+
+pub fn coordinator_prove_multi_sum_relationship_final(check: &Scalar, sender_proofs: &[SenderRelationshipProofFinalPublic], receiver_proofs: &[ReceiverRelationshipProofFinalPublic]) -> RelationshipProof {
+    let mut left_commit = Scalar::from(0u64);
+    let mut m_list = Vec::new();
+    let mut n_list = Vec::new();
+    for i in 0..receiver_proofs.len() 
+    {
+        left_commit += receiver_proofs[i].t_commit_share;
+    }
+
+    for i in 0..sender_proofs.len()
+    {
+        m_list.push(sender_proofs[i].m);
+        n_list.push(sender_proofs[i].n);
+    }
+
+    return RelationshipProof {
+        check: *check,
+        m_list: m_list,
+        n_list: n_list,
+        left_commit: left_commit,
+    };
+}
+
 pub fn prove_multi_sum_relationship(
     input_value_list: &[u64],
     input_blinding_list: &[Scalar],
@@ -532,7 +649,8 @@ pub fn prove_multi_sum_relationship(
     value_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
 ) -> RelationshipProof {
-    if input_value_list.len() != input_blinding_list.len() || output_value_list.len() != output_blinding_list.len()
+    if input_value_list.len() != input_blinding_list.len()
+        || output_value_list.len() != output_blinding_list.len()
     {
         return RelationshipProof::default();
     }
@@ -561,20 +679,21 @@ pub fn prove_multi_sum_relationship(
             blinding_a_i * value_basepoint + blinding_b_i * blinding_basepoint;
         input_t_point_list.push(point_t_i);
         blinding_a_sum += blinding_a_i;
-        let input_commitment_i = Scalar::from(input_value_list[i]) * value_basepoint
+        let input_commitment_i = Scalar::from(input_value_list[i])
+            * value_basepoint
             + input_blinding_list[i] * blinding_basepoint;
         hash_vec.append(&mut point_to_bytes(&input_commitment_i));
     }
 
     for i in 0..output_value_list.len() {
-        let output_commitment_i = Scalar::from(output_value_list[i]) * value_basepoint
+        let output_commitment_i = Scalar::from(output_value_list[i])
+            * value_basepoint
             + output_blinding_list[i] * blinding_basepoint;
         hash_vec.append(&mut point_to_bytes(&output_commitment_i));
     }
 
     let t_sum_commit =
         blinding_a_sum * value_basepoint + blinding_f * blinding_basepoint;
-
 
     for point in input_t_point_list.iter() {
         hash_vec.append(&mut point_to_bytes(point));
@@ -616,7 +735,6 @@ pub fn verify_multi_sum_relationship(
         return Ok(false);
     }
 
-
     let mut hash_vec = Vec::new();
     hash_vec.append(&mut point_to_bytes(value_basepoint));
     hash_vec.append(&mut point_to_bytes(blinding_basepoint));
@@ -632,15 +750,17 @@ pub fn verify_multi_sum_relationship(
     for i in 0..input_commitments.len() {
         m_sum += proof.m_list[i];
         let point_t_i = proof.m_list[i] * value_basepoint
-            + proof.n_list[i] * blinding_basepoint + proof.check * input_commitments[i];
+            + proof.n_list[i] * blinding_basepoint
+            + proof.check * input_commitments[i];
         hash_vec.append(&mut point_to_bytes(&point_t_i));
     }
     let mut output_sum_commitment = RistrettoPoint::default();
     for point in output_commitments.iter() {
         output_sum_commitment += point;
     }
-    let t_sum_commit =
-        m_sum * value_basepoint + proof.left_commit * blinding_basepoint + proof.check * output_sum_commitment;
+    let t_sum_commit = m_sum * value_basepoint
+        + proof.left_commit * blinding_basepoint
+        + proof.check * output_sum_commitment;
     hash_vec.append(&mut point_to_bytes(&t_sum_commit));
     let check = hash_to_scalar(&hash_vec);
     return Ok(check == proof.check);
@@ -2080,20 +2200,31 @@ mod tests {
             input_blindings.push(blinding);
             spend_sum += value;
             let scalar_value = Scalar::from(value);
-            input_commitments.push(scalar_value * value_basepoint + blinding * blinding_basepoint);
+            input_commitments.push(
+                scalar_value * value_basepoint + blinding * blinding_basepoint,
+            );
         }
         for i in 0..output_length - 1 {
             let value = i as u64;
             let blinding = get_random_scalar();
             output_values.push(value);
             output_blindings.push(blinding);
-            output_commitments.push(value_basepoint * Scalar::from(value) + blinding * blinding_basepoint);
-            output_commitments_error.push(value_basepoint * Scalar::from(value + 1) + blinding * blinding_basepoint);
+            output_commitments.push(
+                value_basepoint * Scalar::from(value)
+                    + blinding * blinding_basepoint,
+            );
+            output_commitments_error.push(
+                value_basepoint * Scalar::from(value + 1)
+                    + blinding * blinding_basepoint,
+            );
         }
         let final_unspent = spend_sum - output_values.iter().sum::<u64>();
         output_values.push(final_unspent);
         output_blindings.push(get_random_scalar());
-        output_commitments.push(value_basepoint * Scalar::from(final_unspent) + output_blindings[output_length - 1] * blinding_basepoint);
+        output_commitments.push(
+            value_basepoint * Scalar::from(final_unspent)
+                + output_blindings[output_length - 1] * blinding_basepoint,
+        );
 
         let proof = prove_multi_sum_relationship(
             &input_values,
@@ -2118,7 +2249,8 @@ mod tests {
         // error case
         // 1. error input commitment
         let mut error_input_commitments = input_commitments.clone();
-        error_input_commitments[0] = error_input_commitments[0] + value_basepoint;
+        error_input_commitments[0] =
+            error_input_commitments[0] + value_basepoint;
         assert_eq!(
             false,
             verify_multi_sum_relationship(
@@ -2133,7 +2265,8 @@ mod tests {
 
         // 2. error output commitment
         let mut error_output_commitments = output_commitments.clone();
-        error_output_commitments[0] = error_output_commitments[0] + value_basepoint;
+        error_output_commitments[0] =
+            error_output_commitments[0] + value_basepoint;
         assert_eq!(
             false,
             verify_multi_sum_relationship(
@@ -2174,8 +2307,83 @@ mod tests {
             )
             .unwrap()
         );
-        
     }
 
-        
+    #[test]
+    fn test_sum_relation_ship_with_round()
+    {
+        let input_count = 10;
+        let output_count = 5;
+        let mut input_blindings = Vec::new();
+        let mut input_private_part = Vec::new();
+        let mut input_public_part = Vec::new();
+        let mut input_commitments = Vec::new();
+
+        let mut output_private_part = Vec::new();
+        let mut output_public_part = Vec::new();
+        let mut output_commitments = Vec::new();
+        let mut output_blidings = Vec::new();
+
+        // 45
+        let mut input_value_sum = 0;
+        for i in 0..input_count 
+        {
+            let value = i as u64;
+            input_value_sum += value;
+            let blinding = get_random_scalar();
+            let scalar_value = Scalar::from(value);
+            input_blindings.push(blinding);
+            input_commitments.push(
+                scalar_value * *BASEPOINT_G1 + blinding * *BASEPOINT_G2,
+            );
+            let (private_part, public_part ) = sender_prove_multi_sum_relationship_setup(value, &blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+            input_private_part.push(private_part);
+            input_public_part.push(public_part);
+        }
+        wedpr_println!("input_value_sum: {:?}", input_value_sum);
+        // 15
+        let mut output_value_sum = 0;
+        for i in 0..output_count
+        {
+            let value = i as u64 + 7;
+            output_value_sum += value;
+            let blinding = get_random_scalar();
+            output_blidings.push(blinding);
+            output_commitments.push(
+                *BASEPOINT_G1 * Scalar::from(value)
+                    + blinding * *BASEPOINT_G2,
+            );
+            let (private_part, public_part ) = receiver_prove_multi_sum_relationship_setup(value, &blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+            output_private_part.push(private_part);
+            output_public_part.push(public_part);
+        }
+        wedpr_println!("output_value_sum: {:?}", output_value_sum);
+        assert_eq!(input_value_sum, output_value_sum);
+
+        let check = coordinator_prove_multi_sum_relationship_setup(&input_public_part, &output_public_part, &BASEPOINT_G1, &BASEPOINT_G2);
+
+        let mut sender_public_parts = Vec::new();
+        let mut receiver_public_parts = Vec::new();
+        for i in 0..input_count 
+        {
+            let sender_public_part = sender_prove_multi_sum_relationship_final(i as u64, &input_blindings[i], &input_private_part[i], &check);
+            sender_public_parts.push(sender_public_part);
+        }
+
+        for i in 0..output_count
+        {
+            let receiver_public_part = receiver_prove_multi_sum_relationship_final(&output_blidings[i], &output_private_part[i], &check);
+            receiver_public_parts.push(receiver_public_part);
+        }
+
+        let result_proof = coordinator_prove_multi_sum_relationship_final(&check, &sender_public_parts, &receiver_public_parts);
+
+        assert_eq!(
+            true,
+            verify_multi_sum_relationship(&input_commitments, &output_commitments, &result_proof, &BASEPOINT_G1, &BASEPOINT_G2)
+            .unwrap()
+        );
+
+
+    }
 }
