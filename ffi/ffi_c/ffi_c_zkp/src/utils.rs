@@ -6,7 +6,7 @@ use wedpr_ffi_common::utils::{
 use wedpr_l_crypto_zkp_utils::{
     bytes_to_point, bytes_to_scalar, ArithmeticProof, BalanceProof,
     Deserialize, EqualityProof, FormatProof, KnowledgeProof, RelationshipProof,
-    Serialize, ValueQualityProof,
+    Serialize, ValueEqualityProof,
 };
 use wedpr_l_utils::error::WedprError;
 
@@ -215,7 +215,7 @@ pub unsafe fn read_c_equality_proof(
 }
 
 pub unsafe fn write_value_equality_proof(
-    value_equality_proof: &ValueQualityProof,
+    value_equality_proof: &ValueEqualityProof,
     c_value_equality_proof: &mut COutputBuffer,
 ) {
     c_write_data_to_pointer(
@@ -227,7 +227,7 @@ pub unsafe fn write_value_equality_proof(
 
 pub unsafe fn read_c_value_equality_proof(
     c_value_equality_proof: &CInputBuffer,
-) -> Result<ValueQualityProof, WedprError> {
+) -> Result<ValueEqualityProof, WedprError> {
     let proof = c_read_raw_data_pointer(
         c_value_equality_proof.data,
         c_value_equality_proof.len,

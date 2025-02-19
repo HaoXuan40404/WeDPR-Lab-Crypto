@@ -25,7 +25,7 @@ fn create_mint_helper(c: &mut Criterion) {
     let c_scalar = Scalar::from(value);
     let c_blinding = get_random_scalar();
     let c_commitment = c_scalar * *BASEPOINT_G1 + c_blinding * *BASEPOINT_G2;
-    let value_proof: wedpr_l_crypto_zkp_utils::ValueQualityProof =
+    let value_proof: wedpr_l_crypto_zkp_utils::ValueEqualityProof =
         prove_value_equality_relationship_proof(
             value,
             &c_blinding,
@@ -57,7 +57,7 @@ fn create_transfer_helper(c: &mut Criterion) {
     let c_scalar = Scalar::from(value);
     let c_blinding = get_random_scalar();
     let c_commitment = c_scalar * *BASEPOINT_G1 + c_blinding * *BASEPOINT_G2;
-    let value_proof: wedpr_l_crypto_zkp_utils::ValueQualityProof =
+    let value_proof: wedpr_l_crypto_zkp_utils::ValueEqualityProof =
         prove_value_equality_relationship_proof(
             value,
             &c_blinding,
@@ -162,7 +162,7 @@ fn create_withdraw_helper(c: &mut Criterion) {
     let c_scalar = Scalar::from(value);
     let c_blinding = get_random_scalar();
     let c_commitment = c_scalar * *BASEPOINT_G1 + c_blinding * *BASEPOINT_G2;
-    let value_proof: wedpr_l_crypto_zkp_utils::ValueQualityProof =
+    let value_proof: wedpr_l_crypto_zkp_utils::ValueEqualityProof =
         prove_value_equality_relationship_proof(
             value,
             &c_blinding,

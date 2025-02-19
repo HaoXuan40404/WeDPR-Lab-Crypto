@@ -33,7 +33,7 @@ fn generate_mint_file(count: u64) {
         let c_scalar = Scalar::from(value);
         let c_blinding = get_random_scalar();
         let c_commitment = c_scalar * *BASEPOINT_G1 + c_blinding * *BASEPOINT_G2;
-        let value_proof: wedpr_l_crypto_zkp_utils::ValueQualityProof = prove_value_equality_relationship_proof(value, &c_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
+        let value_proof: wedpr_l_crypto_zkp_utils::ValueEqualityProof = prove_value_equality_relationship_proof(value, &c_blinding, &BASEPOINT_G1, &BASEPOINT_G2);
         assert_eq!(true, verify_value_equality_relationship_proof(value, &c_commitment, &value_proof, &BASEPOINT_G1, &BASEPOINT_G2).unwrap());
         writeln!(file_commitment, "{}", hex::encode(&point_to_bytes(&c_commitment)));
         writeln!(file_proof, "{}", hex::encode(&value_proof.serialize()));

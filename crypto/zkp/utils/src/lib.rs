@@ -46,17 +46,47 @@ pub trait Deserialize: Sized {
     fn deserialize(bytes: &[u8]) -> Result<Self, WedprError>;
 }
 
+#[derive(Default, Debug, Clone)]
+pub struct Commitments {
+    pub commitments: Vec<RistrettoPoint>,
+}
+
+impl Serialize for Commitments {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        for commitment in &self.commitments {
+            buf.extend(&(point_to_bytes(commitment)));
+        }
+        buf
+    }
+}
+
+impl Deserialize for Commitments {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        let mut offset = 0;
+        let mut commitments = Vec::new();
+        while offset < bytes.len() {
+            let commitment = bytes_to_point(&bytes[offset..])?;
+            commitments.push(commitment);
+            offset += RISTRETTO_POINT_SIZE_IN_BYTES;
+        }
+        Ok(Commitments {
+            commitments: commitments,
+        })
+    }
+}
+
 // ZKP data to verify the balance relationship among value commitments.
 // For example, given C(x), C(y), C(z), this proof data can be used to
 // verify whether x * y =? z.
 #[derive(Default, Debug, Clone)]
-pub struct ValueQualityProof {
+pub struct ValueEqualityProof {
     pub check: Scalar,
     pub m1: Scalar,
     pub m2: Scalar,
 }
 
-impl Serialize for ValueQualityProof {
+impl Serialize for ValueEqualityProof {
     fn serialize(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(3 * SCALAR_SIZE_IN_BYTE);
         buf.extend(&(scalar_to_bytes(&self.check)));
@@ -66,7 +96,7 @@ impl Serialize for ValueQualityProof {
     }
 }
 
-impl Deserialize for ValueQualityProof {
+impl Deserialize for ValueEqualityProof {
     fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
         if bytes.len() < 3 * SCALAR_SIZE_IN_BYTE {
             return Err(WedprError::ArgumentError);
@@ -81,7 +111,7 @@ impl Deserialize for ValueQualityProof {
         // decode m2
         offset += SCALAR_SIZE_IN_BYTE;
         let m2 = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
-        Ok(ValueQualityProof {
+        Ok(ValueEqualityProof {
             check: check,
             m1: m1,
             m2: m2,
@@ -261,41 +291,312 @@ impl Deserialize for FormatProof {
 
 #[derive(Default, Debug, Clone)]
 pub struct ReceiverRelationshipProofSetupPrivate {
-    pub f_blinding: Scalar
+    pub f_blinding: Scalar,
 }
 
+impl Serialize for ReceiverRelationshipProofSetupPrivate {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(SCALAR_SIZE_IN_BYTE);
+        buf.extend(&(scalar_to_bytes(&self.f_blinding)));
+        buf
+    }
+}
+
+impl Deserialize for ReceiverRelationshipProofSetupPrivate {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < SCALAR_SIZE_IN_BYTE {
+            return Err(WedprError::ArgumentError);
+        }
+        let f_blinding = bytes_to_scalar(&bytes[0..SCALAR_SIZE_IN_BYTE])?;
+        Ok(ReceiverRelationshipProofSetupPrivate {
+            f_blinding: f_blinding,
+        })
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct ReceiverRelationshipProofSetupPublicList {
+    pub receiver_setup_list: Vec<ReceiverRelationshipProofSetupPublic>
+}
+
+impl Serialize for ReceiverRelationshipProofSetupPublicList {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        for setup in &self.receiver_setup_list {
+            buf.extend(&(setup.serialize()));
+        }
+        buf
+    }
+}
+
+impl Deserialize for ReceiverRelationshipProofSetupPublicList {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        let mut offset = 0;
+        let mut receiver_setup_list = Vec::new();
+        while offset < bytes.len() {
+            let setup = ReceiverRelationshipProofSetupPublic::deserialize(
+                &bytes[offset..],
+            )?;
+            receiver_setup_list.push(setup);
+            offset += 2 * RISTRETTO_POINT_SIZE_IN_BYTES;
+        }
+        Ok(ReceiverRelationshipProofSetupPublicList {
+            receiver_setup_list: receiver_setup_list,
+        })
+    }
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct ReceiverRelationshipProofSetupPublic {
     pub f_commit: RistrettoPoint,
-    pub commitment: RistrettoPoint
+    pub commitment: RistrettoPoint,
+}
+
+impl Serialize for ReceiverRelationshipProofSetupPublic {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(2 * RISTRETTO_POINT_SIZE_IN_BYTES);
+        buf.extend(&(point_to_bytes(&self.f_commit)));
+        buf.extend(&(point_to_bytes(&self.commitment)));
+        buf
+    }
+}
+
+impl Deserialize for ReceiverRelationshipProofSetupPublic {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < 2 * RISTRETTO_POINT_SIZE_IN_BYTES {
+            return Err(WedprError::ArgumentError);
+        }
+        let f_commit =
+            bytes_to_point(&bytes[0..RISTRETTO_POINT_SIZE_IN_BYTES])?;
+        let commitment = bytes_to_point(
+            &bytes[RISTRETTO_POINT_SIZE_IN_BYTES
+                ..2 * RISTRETTO_POINT_SIZE_IN_BYTES],
+        )?;
+        Ok(ReceiverRelationshipProofSetupPublic {
+            f_commit: f_commit,
+            commitment: commitment,
+        })
+    }
 }
 
 #[derive(Default, Debug, Clone)]
 pub struct SenderRelationshipProofSetupPrivate {
     pub blinding_a: Scalar,
-    pub blinding_b: Scalar
+    pub blinding_b: Scalar,
 }
 
+impl Serialize for SenderRelationshipProofSetupPrivate {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(2 * SCALAR_SIZE_IN_BYTE);
+        buf.extend(&(scalar_to_bytes(&self.blinding_a)));
+        buf.extend(&(scalar_to_bytes(&self.blinding_b)));
+        buf
+    }
+}
+
+impl Deserialize for SenderRelationshipProofSetupPrivate {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < 2 * SCALAR_SIZE_IN_BYTE {
+            return Err(WedprError::ArgumentError);
+        }
+        let blinding_a = bytes_to_scalar(&bytes[0..SCALAR_SIZE_IN_BYTE])?;
+        let blinding_b = bytes_to_scalar(
+            &bytes[SCALAR_SIZE_IN_BYTE..2 * SCALAR_SIZE_IN_BYTE],
+        )?;
+        Ok(SenderRelationshipProofSetupPrivate {
+            blinding_a: blinding_a,
+            blinding_b: blinding_b,
+        })
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct SenderRelationshipProofSetupPublicList {
+    pub sender_setup_list: Vec<SenderRelationshipProofSetupPublic>
+}
+
+impl Serialize for SenderRelationshipProofSetupPublicList {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        for setup in &self.sender_setup_list {
+            buf.extend(&(setup.serialize()));
+        }
+        buf
+    }
+}
+
+impl Deserialize for SenderRelationshipProofSetupPublicList {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        let mut offset = 0;
+        let mut sender_setup_list = Vec::new();
+        while offset < bytes.len() {
+            let setup = SenderRelationshipProofSetupPublic::deserialize(
+                &bytes[offset..],
+            )?;
+            sender_setup_list.push(setup);
+            offset += 3 * RISTRETTO_POINT_SIZE_IN_BYTES;
+        }
+        Ok(SenderRelationshipProofSetupPublicList {
+            sender_setup_list: sender_setup_list,
+        })
+    }
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct SenderRelationshipProofSetupPublic {
     pub t_commit: RistrettoPoint,
     pub a_commit: RistrettoPoint,
-    pub commitment: RistrettoPoint
+    pub commitment: RistrettoPoint,
+}
+
+impl Serialize for SenderRelationshipProofSetupPublic {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(3 * RISTRETTO_POINT_SIZE_IN_BYTES);
+        buf.extend(&(point_to_bytes(&self.t_commit)));
+        buf.extend(&(point_to_bytes(&self.a_commit)));
+        buf.extend(&(point_to_bytes(&self.commitment)));
+        buf
+    }
+}
+
+impl Deserialize for SenderRelationshipProofSetupPublic {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < 3 * RISTRETTO_POINT_SIZE_IN_BYTES {
+            return Err(WedprError::ArgumentError);
+        }
+        let t_commit =
+            bytes_to_point(&bytes[0..RISTRETTO_POINT_SIZE_IN_BYTES])?;
+        let a_commit = bytes_to_point(
+            &bytes[RISTRETTO_POINT_SIZE_IN_BYTES
+                ..2 * RISTRETTO_POINT_SIZE_IN_BYTES],
+        )?;
+        let commitment = bytes_to_point(
+            &bytes[2 * RISTRETTO_POINT_SIZE_IN_BYTES
+                ..3 * RISTRETTO_POINT_SIZE_IN_BYTES],
+        )?;
+        Ok(SenderRelationshipProofSetupPublic {
+            t_commit: t_commit,
+            a_commit: a_commit,
+            commitment: commitment,
+        })
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct SenderRelationshipProofFinalPublicList {
+    pub sender_final_list: Vec<SenderRelationshipProofFinalPublic>
+}
+
+impl Serialize for SenderRelationshipProofFinalPublicList {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        for final_public in &self.sender_final_list {
+            buf.extend(&(final_public.serialize()));
+        }
+        buf
+    }
+}
+
+impl Deserialize for SenderRelationshipProofFinalPublicList {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        let mut offset = 0;
+        let mut sender_final_list = Vec::new();
+        while offset < bytes.len() {
+            let final_public =
+                SenderRelationshipProofFinalPublic::deserialize(&bytes[offset..])?;
+            sender_final_list.push(final_public);
+            offset += 2 * SCALAR_SIZE_IN_BYTE;
+        }
+        Ok(SenderRelationshipProofFinalPublicList {
+            sender_final_list: sender_final_list,
+        })
+    }
 }
 
 #[derive(Default, Debug, Clone)]
 pub struct SenderRelationshipProofFinalPublic {
     pub m: Scalar,
-    pub n: Scalar
+    pub n: Scalar,
 }
+
+impl Serialize for SenderRelationshipProofFinalPublic {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(2 * SCALAR_SIZE_IN_BYTE);
+        buf.extend(&(scalar_to_bytes(&self.m)));
+        buf.extend(&(scalar_to_bytes(&self.n)));
+        buf
+    }
+}
+
+impl Deserialize for SenderRelationshipProofFinalPublic {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < 2 * SCALAR_SIZE_IN_BYTE {
+            return Err(WedprError::ArgumentError);
+        }
+        let m = bytes_to_scalar(&bytes[0..SCALAR_SIZE_IN_BYTE])?;
+        let n = bytes_to_scalar(
+            &bytes[SCALAR_SIZE_IN_BYTE..2 * SCALAR_SIZE_IN_BYTE],
+        )?;
+        Ok(SenderRelationshipProofFinalPublic { m: m, n: n })
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct ReceiverRelationshipProofFinalPublicList {
+    pub receiver_final_list: Vec<ReceiverRelationshipProofFinalPublic>
+} 
+
+impl Serialize for ReceiverRelationshipProofFinalPublicList {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        for final_public in &self.receiver_final_list {
+            buf.extend(&(final_public.serialize()));
+        }
+        buf
+    }
+}
+
+impl Deserialize for ReceiverRelationshipProofFinalPublicList {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        let mut offset = 0;
+        let mut receiver_final_list = Vec::new();
+        while offset < bytes.len() {
+            let final_public =
+                ReceiverRelationshipProofFinalPublic::deserialize(&bytes[offset..])?;
+            receiver_final_list.push(final_public);
+            offset += SCALAR_SIZE_IN_BYTE;
+        }
+        Ok(ReceiverRelationshipProofFinalPublicList {
+            receiver_final_list: receiver_final_list,
+        })
+    }
+}
+
 
 #[derive(Default, Debug, Clone)]
 pub struct ReceiverRelationshipProofFinalPublic {
     pub t_commit_share: Scalar,
 }
 
+impl Serialize for ReceiverRelationshipProofFinalPublic {
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(SCALAR_SIZE_IN_BYTE);
+        buf.extend(&(scalar_to_bytes(&self.t_commit_share)));
+        buf
+    }
+}
+
+impl Deserialize for ReceiverRelationshipProofFinalPublic {
+    fn deserialize(bytes: &[u8]) -> Result<Self, WedprError> {
+        if bytes.len() < SCALAR_SIZE_IN_BYTE {
+            return Err(WedprError::ArgumentError);
+        }
+        let t_commit_share = bytes_to_scalar(&bytes[0..SCALAR_SIZE_IN_BYTE])?;
+        Ok(ReceiverRelationshipProofFinalPublic {
+            t_commit_share: t_commit_share,
+        })
+    }
+}
 #[derive(Default, Debug, Clone)]
 pub struct RelationshipProof {
     pub check: Scalar,
@@ -326,7 +627,6 @@ impl Serialize for RelationshipProof {
 
         buf
     }
-    
 }
 
 impl Deserialize for RelationshipProof {
@@ -338,22 +638,26 @@ impl Deserialize for RelationshipProof {
         let m_list_len = bytes[offset];
         offset += 1;
         // decode check
-        let check = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        let check =
+            bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
         offset += SCALAR_SIZE_IN_BYTE;
         // decode left_commit
-        let left_commit = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+        let left_commit =
+            bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
         offset += SCALAR_SIZE_IN_BYTE;
         // decode m_list
         let mut m_list = Vec::new();
         for _ in 0..m_list_len {
-            let m = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+            let m =
+                bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
             m_list.push(m);
             offset += SCALAR_SIZE_IN_BYTE;
         }
         // decode n_list
         let mut n_list = Vec::new();
         for _ in 0..m_list_len {
-            let n = bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
+            let n =
+                bytes_to_scalar(&bytes[offset..offset + SCALAR_SIZE_IN_BYTE])?;
             n_list.push(n);
             offset += SCALAR_SIZE_IN_BYTE;
         }
@@ -364,7 +668,6 @@ impl Deserialize for RelationshipProof {
             n_list: n_list,
         })
     }
-    
 }
 
 #[derive(Default, Debug, Clone)]
@@ -550,8 +853,7 @@ pub fn bytes_to_point(point: &[u8]) -> Result<RistrettoPoint, WedprError> {
         wedpr_println!("bytes_to_point decode failed");
         return Err(WedprError::FormatError);
     }
-    let point_value_result = match CompressedRistretto::from_slice(&point)
-    {
+    let point_value_result = match CompressedRistretto::from_slice(&point) {
         Ok(v) => v,
         Err(_e) => {
             wedpr_println!(
@@ -560,8 +862,7 @@ pub fn bytes_to_point(point: &[u8]) -> Result<RistrettoPoint, WedprError> {
             return Err(WedprError::FormatError);
         },
     };
-    let point_value = match point_value_result.decompress()
-    {
+    let point_value = match point_value_result.decompress() {
         Some(v) => v,
         None => {
             wedpr_println!(

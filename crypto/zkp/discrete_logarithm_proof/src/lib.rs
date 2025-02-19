@@ -8,7 +8,7 @@ use curve25519_dalek::{
 };
 use rand::Rng;
 use wedpr_l_crypto_zkp_utils::{
-    get_random_scalar, hash_to_scalar, point_to_bytes, ArithmeticProof, BalanceProof, EqualityProof, FormatProof, KnowledgeProof, ReceiverRelationshipProofFinalPublic, ReceiverRelationshipProofSetupPrivate, ReceiverRelationshipProofSetupPublic, RelationshipProof, SenderRelationshipProofFinalPublic, SenderRelationshipProofSetupPrivate, SenderRelationshipProofSetupPublic, ValueQualityProof
+    get_random_scalar, hash_to_scalar, point_to_bytes, ArithmeticProof, BalanceProof, EqualityProof, FormatProof, KnowledgeProof, ReceiverRelationshipProofFinalPublic, ReceiverRelationshipProofSetupPrivate, ReceiverRelationshipProofSetupPublic, RelationshipProof, SenderRelationshipProofFinalPublic, SenderRelationshipProofSetupPrivate, SenderRelationshipProofSetupPublic, ValueEqualityProof
 };
 
 use wedpr_l_utils::error::WedprError;
@@ -28,7 +28,7 @@ pub fn prove_value_equality_relationship_proof(
     c_blinding: &Scalar,
     c_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
-) -> ValueQualityProof {
+) -> ValueEqualityProof {
     let blinding_a = get_random_scalar();
     let blinding_b = get_random_scalar();
     let t1 = blinding_a * c_basepoint;
@@ -46,7 +46,7 @@ pub fn prove_value_equality_relationship_proof(
     let check = hash_to_scalar(&hash_vec);
     let m1 = blinding_a - (check * c_value_scalar);
     let m2 = blinding_b - (check * c_blinding);
-    return ValueQualityProof { check, m1, m2 };
+    return ValueEqualityProof { check, m1, m2 };
 }
 
 /// Verifies a commitment satisfying an equality relationship, i.e.
@@ -56,7 +56,7 @@ pub fn prove_value_equality_relationship_proof(
 pub fn verify_value_equality_relationship_proof(
     c_value: u64,
     c_point: &RistrettoPoint,
-    proof: &ValueQualityProof,
+    proof: &ValueEqualityProof,
     c_basepoint: &RistrettoPoint,
     blinding_basepoint: &RistrettoPoint,
 ) -> Result<bool, WedprError> {
@@ -551,6 +551,15 @@ pub fn sender_prove_multi_sum_relationship_setup(
     );
 }
 
+pub fn sender_prove_multi_sum_relationship_final(input_value: u64, input_blinding: &Scalar, proof_secret: &SenderRelationshipProofSetupPrivate, check: &Scalar) -> SenderRelationshipProofFinalPublic {
+    let m = proof_secret.blinding_a - check * Scalar::from(input_value);
+    let n = proof_secret.blinding_b - check * input_blinding;
+    return SenderRelationshipProofFinalPublic {
+        m: m,
+        n: n,
+    };
+}
+
 pub fn receiver_prove_multi_sum_relationship_setup(
     output_value: u64,
     output_blinding: &Scalar,
@@ -573,6 +582,13 @@ pub fn receiver_prove_multi_sum_relationship_setup(
             commitment: commit,
         },
     );
+}
+
+pub fn receiver_prove_multi_sum_relationship_final(output_blinding: &Scalar, proof_secret: &ReceiverRelationshipProofSetupPrivate, check: &Scalar) -> ReceiverRelationshipProofFinalPublic {
+    let t_commit_share = proof_secret.f_blinding - check * output_blinding;
+    return ReceiverRelationshipProofFinalPublic {
+        t_commit_share: t_commit_share,
+    };
 }
 
 pub fn coordinator_prove_multi_sum_relationship_setup(
@@ -600,22 +616,6 @@ pub fn coordinator_prove_multi_sum_relationship_setup(
     let t_commit = a_sum_commit + f_sum_commit;
     hash_vec.append(&mut point_to_bytes(&t_commit));
     return hash_to_scalar(&hash_vec);
-}
-
-pub fn sender_prove_multi_sum_relationship_final(input_value: u64, input_blinding: &Scalar, proof_secret: &SenderRelationshipProofSetupPrivate, check: &Scalar) -> SenderRelationshipProofFinalPublic {
-    let m = proof_secret.blinding_a - check * Scalar::from(input_value);
-    let n = proof_secret.blinding_b - check * input_blinding;
-    return SenderRelationshipProofFinalPublic {
-        m: m,
-        n: n,
-    };
-}
-
-pub fn receiver_prove_multi_sum_relationship_final(output_blinding: &Scalar, proof_secret: &ReceiverRelationshipProofSetupPrivate, check: &Scalar) -> ReceiverRelationshipProofFinalPublic {
-    let t_commit_share = proof_secret.f_blinding - check * output_blinding;
-    return ReceiverRelationshipProofFinalPublic {
-        t_commit_share: t_commit_share,
-    };
 }
 
 pub fn coordinator_prove_multi_sum_relationship_final(check: &Scalar, sender_proofs: &[SenderRelationshipProofFinalPublic], receiver_proofs: &[ReceiverRelationshipProofFinalPublic]) -> RelationshipProof {
