@@ -66,7 +66,7 @@ impl Deserialize for Commitments {
         let mut offset = 0;
         let mut commitments = Vec::new();
         while offset < bytes.len() {
-            let commitment = bytes_to_point(&bytes[offset..])?;
+            let commitment = bytes_to_point(&bytes[offset..offset+RISTRETTO_POINT_SIZE_IN_BYTES])?;
             commitments.push(commitment);
             offset += RISTRETTO_POINT_SIZE_IN_BYTES;
         }

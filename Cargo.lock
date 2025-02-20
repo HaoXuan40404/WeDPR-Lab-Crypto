@@ -2632,6 +2632,7 @@ dependencies = [
 name = "wedpr_ffi_java_zkp"
 version = "0.1.0"
 dependencies = [
+ "curve25519-dalek 4.1.3",
  "jni",
  "wedpr_ffi_common 1.1.0",
  "wedpr_ffi_macros 1.1.0",

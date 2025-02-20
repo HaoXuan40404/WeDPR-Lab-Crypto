@@ -1351,7 +1351,7 @@ pub fn get_random_u8() -> u8 {
 mod tests {
     use super::*;
     use wedpr_l_crypto_zkp_utils::{
-        get_random_u32, Serialize, BASEPOINT_G1, BASEPOINT_G2,
+        get_random_u32, Deserialize, Serialize, BASEPOINT_G1, BASEPOINT_G2
     };
     use wedpr_l_macros::wedpr_println;
 
@@ -2384,6 +2384,16 @@ mod tests {
             .unwrap()
         );
 
+    }
 
+
+
+    #[test]
+    fn test_commitments_serde()
+    {
+        let input_commitments_str = "8ce3d84ec8307c41eaaec84ab705efc966b631eb94be4592a7e3a8aba229af32105e8ea619da94c523b3bf1a73546ee8bf573115f8197f9986ac4b06fa19a270";
+        let bytes_commitment = hex::decode(input_commitments_str).unwrap();
+        let commitments: Result<wedpr_l_crypto_zkp_utils::Commitments, WedprError> = wedpr_l_crypto_zkp_utils::Commitments::deserialize(bytes_commitment.as_slice());
+        assert_eq!(commitments.is_ok(), true);
     }
 }

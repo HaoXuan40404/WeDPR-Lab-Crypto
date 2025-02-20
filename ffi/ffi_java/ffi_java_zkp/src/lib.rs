@@ -16,7 +16,7 @@ pub mod discrete_logarithm_proof;
 pub mod range_proof;
 
 const RESULT_JAVA_SDK_CLASS_NAME: &str =
-    "com/webank/wedpr/crypto/Zkp/ZkpResult";
+    "com/webank/wedpr/crypto/zkp/ZkpResult";
 
 use jni::{objects::JObject, JNIEnv};
 use wedpr_ffi_common::utils::java_new_jobject;

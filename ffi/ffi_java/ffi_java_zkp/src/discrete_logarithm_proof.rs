@@ -1,3 +1,4 @@
+use curve25519_dalek::Scalar;
 use jni::{
     objects::{JClass, JObject, JValue},
     sys::{jint, jobject},
@@ -31,7 +32,7 @@ use super::get_result_jobject;
 #[no_mangle]
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->proveKnowledgeProof'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_proveKnowledgeProof(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_proveKnowledgeProof(
     env: JNIEnv,
     _class: JClass,
     value: jint,
@@ -86,7 +87,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_proveKnowledgeP
 #[no_mangle]
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->verifyKnowledgeProof'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyKnowledgeProof(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyKnowledgeProof(
     env: JNIEnv,
     _class: JClass,
     commitment_jbytes: jbyteArray,
@@ -166,7 +167,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyKnowledge
 #[no_mangle]
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->proveValueEqualityRelationshipProof'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_proveValueEqualityRelationshipProof(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_proveValueEqualityRelationshipProof(
     env: JNIEnv,
     _class: JClass,
     value1: jint,
@@ -223,7 +224,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_proveValueEqual
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->verifyValueEqualityRelationshipProof'
 /// .
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyValueEqualityRelationshipProof(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyValueEqualityRelationshipProof(
     env: JNIEnv,
     _class: JClass,
     value1: jint,
@@ -307,7 +308,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyValueEqua
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->senderProveMultiSumRelationshipSetup'
 /// .
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_senderProveMultiSumRelationshipSetup(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_senderProveMultiSumRelationshipSetup(
     env: JNIEnv,
     _class: JClass,
     values: jint,
@@ -371,7 +372,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_senderProveMult
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->senderProveMultiSumRelationshipFinal'
 /// .
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_senderProveMultiSumRelationshipFinal(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_senderProveMultiSumRelationshipFinal(
     env: JNIEnv,
     _class: JClass,
     values: jint,
@@ -474,7 +475,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_senderProveMult
 /// Java interface for
 /// 'com.webank.wedpr.zkp.
 /// NativeInterface->receiverProveMultiSumRelationshipSetup'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_receiverProveMultiSumRelationshipSetup(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_receiverProveMultiSumRelationshipSetup(
     env: JNIEnv,
     _class: JClass,
     values: jint,
@@ -523,13 +524,13 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_receiverProveMu
         &env,
         result_jobject,
         &private_bytes,
-        "Private"
+        "PrivatePart"
     );
     java_safe_set_byte_array_field!(
         &env,
         result_jobject,
         &public_bytes,
-        "Public"
+        "PublicPart"
     );
     result_jobject.into_inner()
 }
@@ -538,7 +539,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_receiverProveMu
 /// Java interface for
 /// 'com.webank.wedpr.zkp.
 /// NativeInterface->receiverProveMultiSumRelationshipFinal'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_receiverProveMultiSumRelationshipFinal(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_receiverProveMultiSumRelationshipFinal(
     env: JNIEnv,
     _class: JClass,
     blindings: jbyteArray,
@@ -639,7 +640,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_receiverProveMu
 /// Java interface for
 /// 'com.webank.wedpr.zkp.
 /// NativeInterface->coordinatorProveMultiSumRelationshipSetup'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_coordinatorProveMultiSumRelationshipSetup(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_coordinatorProveMultiSumRelationshipSetup(
     env: JNIEnv,
     _class: JClass,
     sender_setup_lists: jbyteArray,
@@ -720,7 +721,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_coordinatorProv
 /// Java interface for
 /// 'com.webank.wedpr.zkp.
 /// NativeInterface->coordinatorProveMultiSumRelationshipFinal'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_coordinatorProveMultiSumRelationshipFinal(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_coordinatorProveMultiSumRelationshipFinal(
     env: JNIEnv,
     _class: JClass,
     check: jbyteArray,
@@ -821,7 +822,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_coordinatorProv
 #[no_mangle]
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->verifyMultiSumRelationship'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyMultiSumRelationship(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyMultiSumRelationship(
     env: JNIEnv,
     _class: JClass,
     input_commitments: jbyteArray,
@@ -927,5 +928,49 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyMultiSumR
     };
 
     java_safe_set_boolean_field!(&env, result_jobject, result, "Result");
+    result_jobject.into_inner()
+}
+
+#[no_mangle]
+/// Java interface for
+/// 'com.webank.wedpr.zkp.NativeInterface->computeCommitment'.
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_computeCommitment(
+    env: JNIEnv,
+    _class: JClass,
+    value: jint,
+    blinding: jbyteArray,
+) -> jobject {
+    let result_jobject = get_result_jobject(&env);
+
+    // Convert Java byte array to Rust byte vector
+    let blinding_bytes = match java_jbytes_to_bytes(&env, blinding) {
+        Ok(bytes) => bytes,
+        Err(_) => {
+            return java_set_error_field_and_extract_jobject(
+                &env,
+                &result_jobject,
+                "Blinding conversion failed",
+            );
+        },
+    };
+
+    // Convert bytes to scalar
+    let blinding_scalar = match bytes_to_scalar(&blinding_bytes) {
+        Ok(scalar) => scalar,
+        Err(_) => {
+            return java_set_error_field_and_extract_jobject(
+                &env,
+                &result_jobject,
+                "Blinding scalar conversion failed",
+            );
+        },
+    };
+
+    // Compute the commitment
+    let commitment = Scalar::from(value as u64) * *BASEPOINT_G1 + blinding_scalar * *BASEPOINT_G2;
+
+    // Convert Rust byte vector to Java byte array
+    let commitment_bytes = wedpr_l_crypto_zkp_utils::point_to_bytes(&commitment);
+    java_safe_set_byte_array_field!(&env, result_jobject, &commitment_bytes, "Commitment");
     result_jobject.into_inner()
 }

@@ -20,7 +20,7 @@ use super::get_result_jobject;
 #[no_mangle]
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->proveRangeProof'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_proveRangeProof(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_proveRangeProof(
     env: JNIEnv,
     _class: JClass,
     value: jint,
@@ -64,7 +64,7 @@ pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_proveRangeProof
 #[no_mangle]
 /// Java interface for
 /// 'com.webank.wedpr.zkp.NativeInterface->verifyRangeProof'.
-pub extern "system" fn Java_com_webank_wedpr_zkp_NativeInterface_verifyRangeProof(
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyRangeProof(
     env: JNIEnv,
     _class: JClass,
     commitment: jbyteArray,
