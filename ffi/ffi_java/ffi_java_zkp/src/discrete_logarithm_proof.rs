@@ -79,7 +79,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_proveKno
         &env,
         result_jobject,
         &proof_bytes,
-        "Proof"
+        "proof"
     );
     result_jobject.into_inner()
 }
@@ -160,7 +160,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyKn
         },
     };
 
-    java_safe_set_boolean_field!(&env, result_jobject, result, "Result");
+    java_safe_set_boolean_field!(&env, result_jobject, result, "result");
     result_jobject.into_inner()
 }
 
@@ -215,7 +215,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_proveVal
         &env,
         result_jobject,
         &proof_bytes,
-        "Proof"
+        "proof"
     );
     result_jobject.into_inner()
 }
@@ -300,7 +300,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyVa
         },
     };
 
-    java_safe_set_boolean_field!(&env, result_jobject, result, "Result");
+    java_safe_set_boolean_field!(&env, result_jobject, result, "result");
     result_jobject.into_inner()
 }
 
@@ -357,13 +357,13 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_senderPr
         &env,
         result_jobject,
         &private_bytes,
-        "PrivatePart"
+        "privatePart"
     );
     java_safe_set_byte_array_field!(
         &env,
         result_jobject,
         &public_bytes,
-        "PublicPart"
+        "publicPart"
     );
     result_jobject.into_inner()
 }
@@ -466,7 +466,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_senderPr
         &env,
         result_jobject,
         &public_bytes,
-        "PublicPart"
+        "publicPart"
     );
     result_jobject.into_inner()
 }
@@ -524,13 +524,13 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_receiver
         &env,
         result_jobject,
         &private_bytes,
-        "PrivatePart"
+        "privatePart"
     );
     java_safe_set_byte_array_field!(
         &env,
         result_jobject,
         &public_bytes,
-        "PublicPart"
+        "publicPart"
     );
     result_jobject.into_inner()
 }
@@ -631,7 +631,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_receiver
         &env,
         result_jobject,
         &public_bytes,
-        "PublicPart"
+        "publicPart"
     );
     result_jobject.into_inner()
 }
@@ -712,7 +712,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_coordina
         &env,
         result_jobject,
         &check_bytes,
-        "Check"
+        "check"
     );
     result_jobject.into_inner()
 }
@@ -814,7 +814,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_coordina
         &env,
         result_jobject,
         &proof_bytes,
-        "Proof"
+        "proof"
     );
     result_jobject.into_inner()
 }
@@ -927,7 +927,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyMu
         },
     };
 
-    java_safe_set_boolean_field!(&env, result_jobject, result, "Result");
+    java_safe_set_boolean_field!(&env, result_jobject, result, "result");
     result_jobject.into_inner()
 }
 
@@ -971,6 +971,49 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_computeC
 
     // Convert Rust byte vector to Java byte array
     let commitment_bytes = wedpr_l_crypto_zkp_utils::point_to_bytes(&commitment);
-    java_safe_set_byte_array_field!(&env, result_jobject, &commitment_bytes, "Commitment");
+    java_safe_set_byte_array_field!(&env, result_jobject, &commitment_bytes, "commitment");
+    result_jobject.into_inner()
+}
+
+#[no_mangle]
+/// Java interface for
+/// 'com.webank.wedpr.zkp.NativeInterface->computeViewkey'.
+pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_computeViewkey(
+    env: JNIEnv,
+    _class: JClass,
+    blinding: jbyteArray,
+) -> jobject {
+    let result_jobject = get_result_jobject(&env);
+
+    // Convert Java byte array to Rust byte vector
+    let blinding_bytes = match java_jbytes_to_bytes(&env, blinding) {
+        Ok(bytes) => bytes,
+        Err(_) => {
+            return java_set_error_field_and_extract_jobject(
+                &env,
+                &result_jobject,
+                "Blinding conversion failed",
+            );
+        },
+    };
+
+    // Convert bytes to scalar
+    let blinding_scalar = match bytes_to_scalar(&blinding_bytes) {
+        Ok(scalar) => scalar,
+        Err(_) => {
+            return java_set_error_field_and_extract_jobject(
+                &env,
+                &result_jobject,
+                "Blinding scalar conversion failed",
+            );
+        },
+    };
+
+    // Compute the commitment
+    let viewkey = blinding_scalar * *BASEPOINT_G1;
+
+    // Convert Rust byte vector to Java byte array
+    let viewkey_bytes = wedpr_l_crypto_zkp_utils::point_to_bytes(&viewkey);
+    java_safe_set_byte_array_field!(&env, result_jobject, &viewkey_bytes, "viewkey");
     result_jobject.into_inner()
 }

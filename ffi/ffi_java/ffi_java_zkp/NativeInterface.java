@@ -35,4 +35,5 @@ public class NativeInterface {
 
     public native ZkpResult computeCommitment(int value, byte[] blinding);
 
+    public native ZkpResult computeViewkey(byte[] blinding);
 }

@@ -57,7 +57,7 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_proveRan
         prove_value_range_with_blinding(value as u64, &blinding_scalar);
 
     // Convert Rust byte vector to Java byte array
-    java_safe_set_byte_array_field!(&env, result_jobject, &proof, "Proof");
+    java_safe_set_byte_array_field!(&env, result_jobject, &proof, "proof");
     result_jobject.into_inner()
 }
 
@@ -110,6 +110,6 @@ pub extern "system" fn Java_com_webank_wedpr_crypto_zkp_NativeInterface_verifyRa
     // Verify the proof
     let result = verify_value_range(&commitment, &proof_bytes);
 
-    java_safe_set_boolean_field!(&env, result_jobject, result, "Result");
+    java_safe_set_boolean_field!(&env, result_jobject, result, "result");
     result_jobject.into_inner()
 }
